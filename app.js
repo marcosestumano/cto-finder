@@ -11,6 +11,7 @@ const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY  = import.meta.env.VITE_SUPABASE_KEY
 const MAPBOX_TOKEN  = import.meta.env.VITE_MAPBOX_TOKEN
 const TABLE         = 'ctos'
+const TOTAL_PORTAS  = 8   // slots por CTO (binagem)
 const credenciaisOk = !!SUPABASE_URL && !!SUPABASE_KEY
 
 // Detecta redirect OAuth — PKCE usa ?code=, implicit usa #access_token
@@ -1215,7 +1216,7 @@ async function loadHistorico() {
     .limit(60)
   if (error) { container.innerHTML = '<div class="usuarios-loading">Erro ao carregar.</div>'; return }
   if (!data.length) { container.innerHTML = '<div class="usuarios-loading">Nenhuma alteração registrada ainda.</div>'; return }
-  const emojis = { editou: '✏️', aprovou: '✅', rejeitou: '❌', removeu: '🗑️', criou: '➕', 'mudou status': '🔄' }
+  const emojis = { editou: '✏️', aprovou: '✅', rejeitou: '❌', removeu: '🗑️', criou: '➕', 'mudou status': '🔄', binagem: '🔌' }
   container.innerHTML = data.map(h => {
     const dt        = new Date(h.created_at).toLocaleString('pt-BR')
     const area      = h.ctos?.area_cabo || 'CTO'
@@ -1295,6 +1296,108 @@ window.focusMarker = (id) => {
     if (!m) return
     clusterGroup.zoomToShowLayer(m, () => setTimeout(() => m.openPopup(), 300))
   }
+}
+
+// ── Binagem de portas ─────────────────────────────────────────
+let binagemCtoId = null
+let binagemSel   = new Set()
+
+function getPortasBinadas(row) {
+  return Array.isArray(row?.portas_binadas) ? row.portas_binadas.map(Number) : []
+}
+
+function ensureBinagemModal() {
+  let el = document.getElementById('modal-binagem')
+  if (el) return el
+  el = document.createElement('div')
+  el.id = 'modal-binagem'
+  el.innerHTML = `
+    <div class="bin-backdrop" onclick="fecharBinagem()"></div>
+    <div class="bin-card">
+      <div class="bin-title">🔌 Binagem</div>
+      <div class="bin-sub" id="bin-sub"></div>
+      <div class="bin-pergunta">Quantas portas foram binadas?</div>
+      <div class="bin-contador"><span id="bin-count">0</span><small>/ ${TOTAL_PORTAS} portas</small></div>
+      <div class="bin-instrucao">Toque nos slots que você binou</div>
+      <div class="bin-slots bin-slots-grande" id="bin-slots"></div>
+      <div class="bin-legenda">
+        <span><i class="bin-dot on"></i> Em uso</span>
+        <span><i class="bin-dot"></i> Livre</span>
+      </div>
+      <div class="bin-msg" id="bin-msg"></div>
+      <div class="bin-acoes">
+        <button class="bin-btn-sec" onclick="fecharBinagem()">Cancelar</button>
+        <button class="bin-btn-pri" id="bin-salvar" onclick="salvarBinagem()">Salvar</button>
+      </div>
+    </div>`
+  document.body.appendChild(el)
+  return el
+}
+
+function renderBinagemSlots() {
+  const wrap = document.getElementById('bin-slots')
+  wrap.innerHTML = Array.from({ length: TOTAL_PORTAS }, (_, i) => i + 1).map((n) => `
+    <button type="button" class="bin-slot ${binagemSel.has(n) ? 'on' : ''}" onclick="toggleSlotBinagem(${n})">${n}</button>
+  `).join('')
+  document.getElementById('bin-count').textContent = binagemSel.size
+}
+
+window.abrirBinagem = (id) => {
+  const row = ctoData[id]
+  if (!row) return
+  binagemCtoId = id
+  binagemSel   = new Set(getPortasBinadas(row))
+  const el = ensureBinagemModal()
+  document.getElementById('bin-sub').textContent =
+    [row.area_cabo || 'CTO', row.sp ? 'SP ' + row.sp : '', row.andar ? row.andar + 'º andar' : '']
+      .filter(Boolean).join(' · ')
+  document.getElementById('bin-msg').textContent = ''
+  renderBinagemSlots()
+  el.classList.add('open')
+}
+
+window.toggleSlotBinagem = (n) => {
+  binagemSel.has(n) ? binagemSel.delete(n) : binagemSel.add(n)
+  renderBinagemSlots()
+}
+
+window.fecharBinagem = () => {
+  document.getElementById('modal-binagem')?.classList.remove('open')
+  binagemCtoId = null
+}
+
+window.salvarBinagem = async () => {
+  const id = binagemCtoId
+  if (!id || !sb) return
+  const btn = document.getElementById('bin-salvar')
+  const msg = document.getElementById('bin-msg')
+  const antes  = getPortasBinadas(ctoData[id])
+  const portas = [...binagemSel].sort((a, b) => a - b)
+
+  btn.disabled = true
+  btn.textContent = 'Salvando…'
+  msg.textContent = ''
+
+  const { data: updated, error } = await sb.rpc('set_portas_binadas', { p_cto_id: String(id), p_portas: portas })
+
+  btn.disabled = false
+  btn.textContent = 'Salvar'
+
+  if (error) {
+    msg.textContent = error.message?.includes('set_portas_binadas')
+      ? 'Binagem ainda não configurada no banco (rode supabase/binagem.sql).'
+      : 'Erro ao salvar: ' + error.message
+    return
+  }
+
+  logHistorico(id, 'binagem', {
+    de:   antes.length  ? antes.join(', ')  : 'nenhuma',
+    para: portas.length ? portas.join(', ') : 'nenhuma',
+  })
+  if (updated) window._applyChange('UPDATE', updated)
+  window.fecharBinagem()
+  // Reabre o card da caixa já com os slots atualizados
+  setTimeout(() => window.focusMarker(id), 100)
 }
 
 // ── Scan de etiqueta por foto ─────────────────────────────────
@@ -1435,6 +1538,20 @@ function buildPopupHTML(row) {
         <button class="popup-del"  onclick="deleteCto('${row.id}')">🗑 Remover</button>
       </div>` : ''
 
+  const binadas  = getPortasBinadas(row)
+  const binagemHtml = `
+    <div class="bin-resumo">
+      <div class="bin-resumo-head">
+        <span class="popup-tag">PORTAS</span>
+        <span class="bin-resumo-count">${binadas.length}/${TOTAL_PORTAS} em uso</span>
+      </div>
+      <div class="bin-slots bin-slots-mini">
+        ${Array.from({ length: TOTAL_PORTAS }, (_, i) => i + 1)
+          .map((n) => `<span class="bin-slot ${binadas.includes(n) ? 'on' : ''}">${n}</span>`).join('')}
+      </div>
+      <button class="popup-binagem-btn" onclick="abrirBinagem('${row.id}')">🔌 Binagem</button>
+    </div>`
+
   const mapsUrl    = `https://www.google.com/maps/dir/?api=1&destination=${row.lat},${row.lng}`
   const count      = alertasCount[row.id] || 0
   const jaReportou = myAlertas.has(row.id)
@@ -1454,6 +1571,7 @@ function buildPopupHTML(row) {
       <div class="popup-nome">${escHtml(row.area_cabo || 'CTO')}</div>
       ${enderecoHtml}${areaCaboHtml}${spHtml}${secHtml}
       ${statusRow}
+      ${binagemHtml}
       <div class="popup-coords">${row.lat.toFixed(6)}, ${row.lng.toFixed(6)}</div>
       <div class="popup-date">${dt}</div>
       <a class="popup-maps-btn" href="${mapsUrl}" target="_blank" rel="noopener">
