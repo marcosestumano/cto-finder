@@ -2212,3 +2212,35 @@ body {
 .bin-btn-sec { background: transparent; border: 1px solid #334155; color: #94a3b8; }
 .bin-btn-pri { background: #22c55e; border: 1px solid #39ff14; color: #04110a; }
 .bin-btn-pri:disabled { opacity: 0.6; cursor: wait; }
+
+
+/* Histórico de binagem */
+.binh-title {
+  margin: 10px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.binh-list {
+  max-height: 130px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.binh-item {
+  background: #0d1a0e;
+  border: 1px solid #1a3a20;
+  border-left: 3px solid #22c55e;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #cbd5e1;
+}
+.binh-item strong { color: #f1f5f9; }
+.binh-res { margin-top: 2px; color: #4ade80; }
+.binh-res strong { color: #39ff14; }
+.binh-cheia { color: #f87171; font-weight: 600; }

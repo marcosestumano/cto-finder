@@ -461,7 +461,7 @@ function initMap() {
   // Carrega comentários ao abrir popup
   map.on('popupopen', (e) => {
     const m = e.popup._source
-    if (m && m._ctoId) loadComentarios(m._ctoId)
+    if (m && m._ctoId) { loadComentarios(m._ctoId); loadBinagens(m._ctoId) }
   })
 
   initFilters()
@@ -830,7 +830,7 @@ window.showCtoDetails = (key, ctoId) => {
   const back = `<button onclick="showBuildingPopup('${key}')" class="bld-back-btn">← Voltar ao prédio</button>`
   setPopupNoFlicker(bm, buildPopupHTML(row) + back)
   // Carrega comentários manualmente (evento popupopen não dispara no update)
-  setTimeout(() => loadComentarios(ctoId), 50)
+  setTimeout(() => { loadComentarios(ctoId); loadBinagens(ctoId) }, 50)
 }
 
 window.showBuildingPopup = (key) => {
@@ -1400,6 +1400,32 @@ window.salvarBinagem = async () => {
   setTimeout(() => window.focusMarker(id), 100)
 }
 
+async function loadBinagens(ctoId) {
+  const container = document.getElementById('binh-' + ctoId)
+  if (!container || !sb) return
+  const { data, error } = await sb.from('binagens')
+    .select('id, user_name, portas_livres, created_at')
+    .eq('cto_id', ctoId)
+    .order('created_at', { ascending: false })
+    .limit(20)
+  if (error) { container.innerHTML = '<span class="cmt-empty" style="color:#ef4444">Erro ao carregar histórico</span>'; return }
+  if (!data || !data.length) { container.innerHTML = '<span class="cmt-empty">Nenhuma binagem registrada</span>'; return }
+  container.innerHTML = data.map((b) => {
+    const d    = new Date(b.created_at)
+    const data_ = d.toLocaleDateString('pt-BR')
+    const hora = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+    const n    = Number(b.portas_livres) || 0
+    const resultado = n === 0
+      ? '<span class="binh-cheia">Todas as portas estão ocupadas.</span>'
+      : `Encontrou <strong>${n}</strong> porta${n > 1 ? 's' : ''} vaga${n > 1 ? 's' : ''}.`
+    return `
+      <div class="binh-item">
+        <div><strong>${escHtml(b.user_name || 'Técnico')}</strong> realizou binagem em ${data_} às ${hora}.</div>
+        <div class="binh-res">${resultado}</div>
+      </div>`
+  }).join('')
+}
+
 // ── Scan de etiqueta por foto ─────────────────────────────────
 window.scanFoto = function () {
   document.getElementById('input-scan-foto').click()
@@ -1550,6 +1576,8 @@ function buildPopupHTML(row) {
           .map((n) => `<span class="bin-slot ${binadas.includes(n) ? 'on' : ''}">${n}</span>`).join('')}
       </div>
       <button class="popup-binagem-btn" onclick="abrirBinagem('${row.id}')">🔌 Binagem</button>
+      <div class="binh-title">🕒 Histórico de binagem</div>
+      <div id="binh-${row.id}" class="binh-list"><span class="cmt-empty">Carregando…</span></div>
     </div>`
 
   const mapsUrl    = `https://www.google.com/maps/dir/?api=1&destination=${row.lat},${row.lng}`
