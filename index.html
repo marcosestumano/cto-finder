@@ -26,7 +26,7 @@
   <div class="login-card">
 
     <div class="login-logo">
-      <span class="icon">📡</span>
+      <span class="icon"><i class="ph ph-broadcast"></i></span>
       <h1>CTO <span>FINDER</span></h1>
       <p>Faça login para acessar o mapa</p>
     </div>
@@ -66,9 +66,9 @@
 <div id="app">
 
   <div id="topbar">
-    <div class="logo">💚 CTO <span>FINDER</span></div>
+    <div class="logo">CTO <span>FINDER</span></div>
     <span class="badge" id="cto-count-badge">0 CTOs</span>
-    <button class="btn-search-toggle" id="btn-search-toggle" title="Buscar CTO">🔍</button>
+    <button class="btn-search-toggle" id="btn-search-toggle" title="Buscar CTO"><i class="ph ph-magnifying-glass"></i></button>
     <div class="user-info">
       <div class="user-avatar" id="user-avatar">?</div>
       <button id="btn-logout" title="Sair">Sair</button>
@@ -78,7 +78,7 @@
   <!-- Painel de busca -->
   <div id="search-panel">
     <div class="search-input-wrap">
-      <span class="search-icon">🔍</span>
+      <span class="search-icon"><i class="ph ph-magnifying-glass"></i></span>
       <input id="search-input" type="text" placeholder="Buscar por rua, bairro, área, SP…" autocomplete="off" />
       <button id="btn-search-close" title="Fechar">✕</button>
     </div>
@@ -88,10 +88,10 @@
 
   <!-- Filtros de status -->
   <div id="filtros-status">
-    <button class="filtro-btn active" data-status="Ativa">🟢 Ativa</button>
-    <button class="filtro-btn active" data-status="Em manutenção">🟡 Manutenção</button>
-    <button class="filtro-btn active" data-status="Danificada">🔴 Danificada</button>
-    <button class="filtro-btn active" data-status="Desconhecida">⚪ Desconhec.</button>
+    <button class="filtro-btn active" data-status="Ativa"><span class="filtro-dot" style="background:#22c55e"></span>Ativa</button>
+    <button class="filtro-btn active" data-status="Em manutenção"><span class="filtro-dot" style="background:#f59e0b"></span>Manutenção</button>
+    <button class="filtro-btn active" data-status="Danificada"><span class="filtro-dot" style="background:#ef4444"></span>Danificada</button>
+    <button class="filtro-btn active" data-status="Desconhecida"><span class="filtro-dot" style="background:#cbd5e1"></span>Desconhec.</button>
   </div>
 
   <div id="map"></div>
@@ -101,7 +101,7 @@
     <button class="fab" id="btn-gps"       title="Minha localização">📍</button>
     <button class="fab" id="btn-lista"     title="Lista de CTOs">☰</button>
     <div id="admin-badge-wrap" style="display:none;position:relative">
-      <button class="fab fab-admin" id="btn-pendentes" style="display:none" title="CTOs pendentes">⏳</button>
+      <button class="fab fab-admin" id="btn-pendentes" style="display:none" title="CTOs pendentes"><i class="ph ph-hourglass"></i></button>
       <span id="pendentes-badge" class="pendentes-badge" style="display:none">0</span>
     </div>
   </div>
@@ -110,7 +110,7 @@
 
   <!-- PWA: banner offline e badge de sync -->
   <div id="offline-banner">
-    <span>📡 Sem internet — modo offline ativo. CTOs cadastradas serão sincronizadas ao reconectar.</span>
+    <span>Sem internet — modo offline ativo. CTOs cadastradas serão sincronizadas ao reconectar.</span>
   </div>
   <div id="offline-sync-badge" style="display:none"></div>
 
@@ -221,29 +221,29 @@
   <div id="painel-admin">
     <div class="painel-header" style="background:linear-gradient(135deg,#78350f,#451a03)">
       <div>
-        <h3>⚙️ Painel Admin</h3>
+        <h3>Painel Admin</h3>
         <div style="font-size:12px;color:#fcd34d;margin-top:2px">Somente visível para você</div>
       </div>
       <button id="btn-fechar-admin">✕</button>
     </div>
     <div class="admin-tabs">
       <button class="admin-tab active" data-tab="pendentes" onclick="switchAdminTab('pendentes')">
-        ⏳ Pendentes <span id="pendentes-tab-count" class="admin-tab-badge">0</span>
+        Pendentes <span id="pendentes-tab-count" class="admin-tab-badge">0</span>
       </button>
       <button class="admin-tab" data-tab="todas" onclick="switchAdminTab('todas')">
-        📋 Todas
+        Todas
       </button>
       <button class="admin-tab" data-tab="atividade" onclick="switchAdminTab('atividade')">
-        ➕ Inserções
+        Inserções
       </button>
       <button class="admin-tab" data-tab="usuarios" onclick="switchAdminTab('usuarios')">
-        🧑 Usuários
+        Usuários
       </button>
       <button class="admin-tab" data-tab="dashboard" onclick="switchAdminTab('dashboard')">
-        📊 Dashboard
+        Dashboard
       </button>
       <button class="admin-tab" data-tab="historico" onclick="switchAdminTab('historico')">
-        🕓 Histórico
+        Histórico
       </button>
     </div>
     <ul id="lista-pendentes" class="admin-list"></ul>
@@ -258,7 +258,7 @@
   <div id="modal-edit">
     <div id="modal-edit-backdrop"></div>
     <div class="modal-card">
-      <h2 style="margin-bottom:18px">✏️ Editar CTO</h2>
+      <h2 style="margin-bottom:18px">Editar CTO</h2>
       <input id="edit-id" type="hidden" />
       <div class="form-group">
         <label>Rua / Avenida</label>

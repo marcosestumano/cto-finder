@@ -539,7 +539,7 @@ body {
   align-items: center;
   gap: 8px;
 }
-.modal-card h2::before { content: "📍"; }
+.modal-card h2::before { content: none; }
 
 .form-group { margin-bottom: 14px; }
 
@@ -2244,3 +2244,10 @@ body {
 .binh-res { margin-top: 2px; color: #4ade80; }
 .binh-res strong { color: #39ff14; }
 .binh-cheia { color: #f87171; font-weight: 600; }
+
+
+/* Ícones (substituem emojis) */
+.filtro-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+.hist-icon { color: #39ff14; }
+.dash-card-icon i { font-size: 20px; }
+.fab i, .btn-search-toggle i, .todas-btn i { font-size: 1.1em; vertical-align: -0.12em; }

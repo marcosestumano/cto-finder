@@ -120,7 +120,7 @@ document.getElementById('auth-senha').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') document.getElementById('btn-auth-submit').click()
 })
 
-if (!credenciaisOk) showAuthMsg('⚠️ Configure as variáveis de ambiente no arquivo .env.', 'error')
+if (!credenciaisOk) showAuthMsg('Configure as variáveis de ambiente no arquivo .env.', 'error')
 
 async function handleSession(session) {
   if (session) {
@@ -208,7 +208,7 @@ if (isOAuthRedirect) {
         }
         // Mostra mensagem de erro visível na tela de login
         const msg = error?.message || 'Não foi possível autenticar. Tente novamente.'
-        showAuthMsg('⚠️ ' + msg, 'error')
+        showAuthMsg(msg, 'error')
       }
     }
   }, 8000)
@@ -408,7 +408,7 @@ async function syncOfflineQueue() {
   if (!pending.length) return
 
   const badge = document.getElementById('offline-sync-badge')
-  if (badge) { badge.textContent = `⏫ Sincronizando ${pending.length} CTO${pending.length > 1 ? 's' : ''}…`; badge.style.display = 'flex' }
+  if (badge) { badge.textContent = `Sincronizando ${pending.length} CTO${pending.length > 1 ? 's' : ''}…`; badge.style.display = 'flex' }
 
   let synced = 0
   for (const item of pending) {
@@ -422,7 +422,7 @@ async function syncOfflineQueue() {
   }
 
   if (badge) {
-    badge.textContent = `✅ ${synced} CTO${synced > 1 ? 's' : ''} sincronizada${synced > 1 ? 's' : ''}!`
+    badge.textContent = `${synced} CTO${synced > 1 ? 's' : ''} sincronizada${synced > 1 ? 's' : ''}!`
     setTimeout(() => { badge.style.display = 'none' }, 3500)
   }
 }
@@ -500,7 +500,7 @@ function initMap() {
 
         // Geocodificação reversa — preenche rua e bairro automaticamente
         if (MAPBOX_TOKEN) {
-          setGeocodeMsg('📍 Detectando endereço…', '')
+          setGeocodeMsg('Detectando endereço…', '')
           try {
             const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${ll.lng},${ll.lat}.json?access_token=${MAPBOX_TOKEN}&language=pt&types=address&limit=1`
             const res  = await fetch(url)
@@ -513,12 +513,12 @@ function initMap() {
               if (rua) document.getElementById('f-endereco').value = rua
               if (bairro) document.getElementById('f-bairro').value = bairro
               if (numMatch) document.getElementById('f-numero').value = numMatch[1]
-              setGeocodeMsg('✓ Endereço detectado automaticamente', 'success')
+              setGeocodeMsg('Endereço detectado automaticamente', 'success')
             } else {
-              setGeocodeMsg('⚠ Endereço não encontrado — preencha manualmente', '')
+              setGeocodeMsg('Endereço não encontrado — preencha manualmente', '')
             }
           } catch {
-            setGeocodeMsg('⚠ Falha ao detectar endereço', '')
+            setGeocodeMsg('Falha ao detectar endereço', '')
           }
         }
       },
@@ -804,7 +804,7 @@ function buildBuildingPopupHTML(key) {
       <div class="popup-nome"><i class="ph ph-building" style="vertical-align:-2px"></i> Prédio FTTA</div>
       ${endFull ? `<div class="popup-meta"><span class="popup-tag">📍</span> ${escHtml(endFull)}${first?.bairro ? ' — ' + escHtml(first.bairro) : ''}</div>` : ''}
       <div class="bld-floors">
-        <div class="bld-floors-title">🏢 ${ctosArr.length} CTO${ctosArr.length !== 1 ? 's' : ''} cadastrada${ctosArr.length !== 1 ? 's' : ''}</div>
+        <div class="bld-floors-title">${ctosArr.length} CTO${ctosArr.length !== 1 ? 's' : ''} cadastrada${ctosArr.length !== 1 ? 's' : ''}</div>
         ${floors}
       </div>
       ${addBtn}
@@ -877,9 +877,9 @@ window.addAndar = (key) => {
   // Mostra badge de auto-aprovação no modal se aplicável
   const geocodeMsg = document.getElementById('geocode-msg') || document.querySelector('.geocode-msg')
   if (hasApproved) {
-    setGeocodeMsg('✓ Prédio já aprovado — novo andar será aprovado automaticamente', 'success')
+    setGeocodeMsg('Prédio já aprovado — novo andar será aprovado automaticamente', 'success')
   } else {
-    setGeocodeMsg('⚠️ Aguardando aprovação da primeira CTO deste prédio', '')
+    setGeocodeMsg('Aguardando aprovação da primeira CTO deste prédio', '')
   }
 }
 
@@ -952,7 +952,7 @@ function buildPopupPendenteOwnHTML(row) {
   const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${row.lat},${row.lng}`
   return `
     <div class="popup">
-      <div class="popup-pendente-own-tag">⏳ Aguardando aprovação do administrador</div>
+      <div class="popup-pendente-own-tag">Aguardando aprovação do administrador</div>
       <div class="popup-nome">${escHtml(row.area_cabo || 'CTO')}</div>
       ${enderecoHtml}${areaCaboHtml}${spHtml}
       <div class="popup-meta" style="color:#94a3b8;font-size:11px;margin-top:4px">
@@ -1041,7 +1041,7 @@ function showAutocomplete(features) {
       placeTempMarker(pendingLatLng)
       map.flyTo(pendingLatLng, 17)
       hideAutocomplete()
-      setGeocodeMsg('✓ Rua encontrada — preencha o número para maior precisão', 'success')
+      setGeocodeMsg('Rua encontrada — preencha o número para maior precisão', 'success')
       document.getElementById('f-numero').focus()
     }
     list.appendChild(item)
@@ -1170,7 +1170,7 @@ document.getElementById('form-cto').onsubmit = async (e) => {
     const count = await getPendingCount()
     const badge = document.getElementById('offline-sync-badge')
     if (badge) {
-      badge.textContent = `📦 ${count} CTO${count > 1 ? 's' : ''} salva${count > 1 ? 's' : ''} offline — sincronizará quando houver internet`
+      badge.textContent = `${count} CTO${count > 1 ? 's' : ''} salva${count > 1 ? 's' : ''} offline — sincronizará quando houver internet`
       badge.style.display = 'flex'
     }
     return
@@ -1186,7 +1186,7 @@ document.getElementById('form-cto').onsubmit = async (e) => {
     closeModal()
     const hint = document.getElementById('hint')
     if (hint) {
-      hint.textContent = '✅ CTO cadastrada com sucesso!'
+      hint.textContent = 'CTO cadastrada com sucesso!'
       hint.style.color = '#4ade80'
       setTimeout(() => {
         hint.textContent = 'Toque no mapa ou use 📍 para registrar uma CTO'
@@ -1216,12 +1216,12 @@ async function loadHistorico() {
     .limit(60)
   if (error) { container.innerHTML = '<div class="usuarios-loading">Erro ao carregar.</div>'; return }
   if (!data.length) { container.innerHTML = '<div class="usuarios-loading">Nenhuma alteração registrada ainda.</div>'; return }
-  const emojis = { editou: '✏️', aprovou: '✅', rejeitou: '❌', removeu: '🗑️', criou: '➕', 'mudou status': '🔄', binagem: '🔌' }
+  const emojis = { editou: 'ph-pencil-simple', aprovou: 'ph-check-circle', rejeitou: 'ph-x-circle', removeu: 'ph-trash', criou: 'ph-plus-circle', 'mudou status': 'ph-arrows-clockwise', binagem: 'ph-plugs' }
   container.innerHTML = data.map(h => {
     const dt        = new Date(h.created_at).toLocaleString('pt-BR')
     const area      = h.ctos?.area_cabo || 'CTO'
     const firstName = (h.user_name || 'Admin').split(' ')[0]
-    const emoji     = emojis[h.acao] || '📝'
+    const emoji     = emojis[h.acao] || 'ph-note-pencil'
     let detalhes = ''
     if (h.alteracoes) {
       const changed = Object.entries(h.alteracoes).map(([k, v]) => `${k}: ${escHtml(String(v))}`).join(' · ')
@@ -1229,11 +1229,11 @@ async function loadHistorico() {
     }
     return `
       <div class="hist-item">
-        <div class="hist-icon">${emoji}</div>
+        <div class="hist-icon"><i class="ph ${emoji}"></i></div>
         <div class="hist-info">
           <div class="hist-title"><strong>${escHtml(firstName)}</strong> ${h.acao} <em>${escHtml(area)}</em></div>
           ${detalhes}
-          <div class="hist-date">🕒 ${dt}</div>
+          <div class="hist-date">${dt}</div>
         </div>
       </div>`
   }).join('')
@@ -1314,7 +1314,7 @@ function ensureBinagemModal() {
   el.innerHTML = `
     <div class="bin-backdrop" onclick="fecharBinagem()"></div>
     <div class="bin-card">
-      <div class="bin-title">🔌 Binagem</div>
+      <div class="bin-title">Binagem</div>
       <div class="bin-sub" id="bin-sub"></div>
       <div class="bin-pergunta">Quantas portas foram binadas?</div>
       <div class="bin-contador"><span id="bin-count">0</span><small>/ ${TOTAL_PORTAS} portas</small></div>
@@ -1456,7 +1456,7 @@ function initOcrButton() {
       timedOut = true
       btn.disabled  = false
       btn.innerHTML = '<i class="ph ph-camera"></i> Escanear etiqueta com câmera'
-      setGeocodeMsg('⚠️ Tempo limite atingido — tente com foto mais nítida.', 'error')
+      setGeocodeMsg('Tempo limite atingido — tente com foto mais nítida.', 'error')
       input.value = ''
     }, 40000)
 
@@ -1471,9 +1471,9 @@ function initOcrButton() {
       if (dados.sec)       { document.getElementById('f-sec').value       = dados.sec;       preenchido.push('SEC: '  + dados.sec) }
 
       if (preenchido.length) {
-        setGeocodeMsg('✓ ' + preenchido.join(' · '), 'success')
+        setGeocodeMsg(preenchido.join(' · '), 'success')
       } else {
-        setGeocodeMsg('⚠️ Não reconheceu os dados — preencha manualmente.', 'error')
+        setGeocodeMsg('Não reconheceu os dados — preencha manualmente.', 'error')
       }
     } catch (err) {
       clearTimeout(timeout)
@@ -1560,8 +1560,8 @@ function buildPopupHTML(row) {
 
   const adminBtns = isAdmin
     ? `<div class="popup-admin-btns">
-        <button class="popup-edit" onclick="editCto('${row.id}')">✏️ Editar</button>
-        <button class="popup-del"  onclick="deleteCto('${row.id}')">🗑 Remover</button>
+        <button class="popup-edit" onclick="editCto('${row.id}')">Editar</button>
+        <button class="popup-del"  onclick="deleteCto('${row.id}')">Remover</button>
       </div>` : ''
 
   const binadas  = getPortasBinadas(row)
@@ -1575,8 +1575,8 @@ function buildPopupHTML(row) {
         ${Array.from({ length: TOTAL_PORTAS }, (_, i) => i + 1)
           .map((n) => `<span class="bin-slot ${binadas.includes(n) ? 'on' : ''}">${n}</span>`).join('')}
       </div>
-      <button class="popup-binagem-btn" onclick="abrirBinagem('${row.id}')">🔌 Binagem</button>
-      <div class="binh-title">🕒 Histórico de binagem</div>
+      <button class="popup-binagem-btn" onclick="abrirBinagem('${row.id}')">Binagem</button>
+      <div class="binh-title">Histórico de binagem</div>
       <div id="binh-${row.id}" class="binh-list"><span class="cmt-empty">Carregando…</span></div>
     </div>`
 
@@ -1587,11 +1587,11 @@ function buildPopupHTML(row) {
   const alertaBtn = isAdmin
     ? (count > 0
         ? `<button class="popup-alerta-dismiss" onclick="dispensarAlertas('${row.id}')">
-             ⚠️ ${count} alerta${count > 1 ? 's' : ''} — Dispensar
+             ${count} alerta${count > 1 ? 's' : ''} — Dispensar
            </button>`
         : '')
     : `<button class="popup-alerta-btn ${jaReportou ? 'reportado' : ''}" onclick="reportarAlerta('${row.id}')">
-         ${jaReportou ? '✓ Ausência reportada' : '⚠️ Reportar ausência'}
+         ${jaReportou ? 'Ausência reportada' : 'Reportar ausência'}
        </button>`
 
   return `
@@ -1609,7 +1609,7 @@ function buildPopupHTML(row) {
       ${alertaBtn}
       ${adminBtns}
       <div class="popup-comments">
-        <div class="popup-comments-title">💬 Comentários</div>
+        <div class="popup-comments-title">Comentários</div>
         <div id="cmt-${row.id}" class="cmt-list"><span class="cmt-empty">Carregando…</span></div>
         <div class="cmt-input-row">
           <input type="text" id="cmt-input-${row.id}" class="cmt-input" placeholder="Deixar observação…" maxlength="300" onkeydown="if(event.key==='Enter')addComentario('${row.id}')" />
@@ -1630,7 +1630,7 @@ function buildPopupPendenteHTML(row) {
 
   return `
     <div class="popup">
-      <div class="popup-pendente-tag">⏳ Aguardando aprovação</div>
+      <div class="popup-pendente-tag">Aguardando aprovação</div>
       <div class="popup-nome">${escHtml(row.area_cabo || 'CTO')}</div>
       ${enderecoHtml}${areaCaboHtml}${spHtml}${secHtml}
       <div class="popup-meta" style="color:#94a3b8;font-size:11px">Por: ${escHtml(row.submetido_por || '—')}</div>
@@ -1639,8 +1639,8 @@ function buildPopupPendenteHTML(row) {
         Abrir rota no Google Maps
       </a>
       <div class="popup-actions-admin">
-        <button class="btn-aprovar" onclick="aprovarCto('${row.id}')">✓ Aprovar</button>
-        <button class="btn-rejeitar" onclick="rejeitarCto('${row.id}')">✕ Rejeitar</button>
+        <button class="btn-aprovar" onclick="aprovarCto('${row.id}')">Aprovar</button>
+        <button class="btn-rejeitar" onclick="rejeitarCto('${row.id}')">Rejeitar</button>
       </div>
     </div>`
 }
@@ -1856,8 +1856,8 @@ async function loadUsuarios() {
   const searchWrap = document.createElement('div')
   searchWrap.className = 'usuario-search-wrap'
   searchWrap.innerHTML = `
-    <input type="text" class="usuario-search-input" id="usuario-search" placeholder="🔍 Buscar por nome ou email…" />
-    <button class="usuario-admin-grant-btn" onclick="promptGrantAdmin()">🛡️ Tornar admin</button>`
+    <input type="text" class="usuario-search-input" id="usuario-search" placeholder="Buscar por nome ou email…" />
+    <button class="usuario-admin-grant-btn" onclick="promptGrantAdmin()">Tornar admin</button>`
   container.appendChild(searchWrap)
 
   const cardsWrap = document.createElement('div')
@@ -1893,12 +1893,12 @@ async function loadUsuarios() {
         <div class="usuario-info">
           <div class="usuario-nome">${escHtml(nome)} ${isAdminUser ? '<span class="usuario-admin-badge">ADMIN</span>' : ''}</div>
           <div class="usuario-email">${escHtml(p.email || '—')}</div>
-          <div class="usuario-meta">📅 ${dt} · 📦 ${ctos} CTO${ctos !== 1 ? 's' : ''}</div>
+          <div class="usuario-meta">${dt} · ${ctos} CTO${ctos !== 1 ? 's' : ''}</div>
         </div>
         <button class="usuario-toggle-admin ${isAdminUser ? 'is-admin' : ''}"
           onclick="toggleAdmin('${p.id}', ${isAdminUser})"
           title="${isAdminUser ? 'Remover admin' : 'Tornar admin'}">
-          ${isAdminUser ? '🛡️ Remover' : '🛡️ Admin'}
+          ${isAdminUser ? 'Remover admin' : 'Tornar admin'}
         </button>`
       cardsWrap.appendChild(card)
     })
@@ -1920,7 +1920,7 @@ window.promptGrantAdmin = async () => {
     alert('Usuário não encontrado: ' + (error?.message || email))
     return
   }
-  alert(`✅ ${email} agora é admin!`)
+  alert(`${email} agora é admin!`)
   loadUsuarios()
 }
 
@@ -1950,7 +1950,7 @@ function upsertTodasItem(row) {
   }
   const c = colors[row.status] || '#6b7280'
   const pendTag = row.status_aprovacao === 'pendente'
-    ? '<span class="todas-badge">⏳</span>' : ''
+    ? '<span class="todas-badge"><i class="ph ph-hourglass"></i></span>' : ''
   li.innerHTML = `
     <div class="list-item todas-item">
       <span class="dot" style="background:${c};flex-shrink:0"></span>
@@ -1959,8 +1959,8 @@ function upsertTodasItem(row) {
         <small>${escHtml(row.status)}${row.bairro ? ' · ' + escHtml(row.bairro) : ''}${row.endereco ? ' · ' + escHtml(row.endereco) : ''}</small>
       </div>
       <div class="todas-actions">
-        <button class="todas-btn edit-btn" title="Editar"  onclick="editCto('${row.id}')">✏️</button>
-        <button class="todas-btn del-btn"  title="Remover" onclick="deleteCtoAdmin('${row.id}')">🗑</button>
+        <button class="todas-btn edit-btn" title="Editar"  onclick="editCto('${row.id}')"><i class="ph ph-pencil-simple"></i></button>
+        <button class="todas-btn del-btn"  title="Remover" onclick="deleteCtoAdmin('${row.id}')"><i class="ph ph-trash"></i></button>
       </div>
     </div>`
 }
@@ -1989,7 +1989,7 @@ function upsertAtividadeItem(row) {
   const inicial = usuario[0].toUpperCase()
   const isPend  = row.status_aprovacao === 'pendente'
   const badgeCls = isPend ? 'ativ-badge pendente' : 'ativ-badge aprovado'
-  const badgeTxt = isPend ? '⏳ Pendente' : '✓ Aprovado'
+  const badgeTxt = isPend ? 'Pendente' : 'Aprovado'
 
   li.innerHTML = `
     <div class="ativ-item" onclick="focusMarker('${row.id}');switchAdminTab('atividade')">
@@ -1997,7 +1997,7 @@ function upsertAtividadeItem(row) {
       <div class="ativ-info">
         <strong>${escHtml(row.area_cabo || 'CTO')}</strong>
         <small>${escHtml(usuario)}</small>
-        <small class="ativ-date">🕒 ${dt}</small>
+        <small class="ativ-date">${dt}</small>
       </div>
       <span class="${badgeCls}">${badgeTxt}</span>
     </div>`
@@ -2165,7 +2165,7 @@ async function loadDashboard() {
     <!-- Cards de métricas -->
     <div class="dash-cards">
       <div class="dash-card">
-        <div class="dash-card-icon" style="background:rgba(57,255,20,.12)">📦</div>
+        <div class="dash-card-icon" style="background:rgba(57,255,20,.12);color:#39ff14"><i class="ph ph-package"></i></div>
         <div class="dash-card-body">
           <div class="dash-card-value">${total}</div>
           <div class="dash-card-label">Total de CTOs</div>
@@ -2173,28 +2173,28 @@ async function loadDashboard() {
         <div class="dash-card-bar" style="width:100%;background:#39ff1433"></div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-icon" style="background:rgba(34,197,94,.15)">✅</div>
+        <div class="dash-card-icon" style="background:rgba(34,197,94,.15);color:#22c55e"><i class="ph ph-check-circle"></i></div>
         <div class="dash-card-body">
           <div class="dash-card-value" style="color:#22c55e">${ativas}</div>
           <div class="dash-card-label">CTOs Ativas</div>
         </div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-icon" style="background:rgba(245,158,11,.15)">⏳</div>
+        <div class="dash-card-icon" style="background:rgba(245,158,11,.15);color:#f59e0b"><i class="ph ph-hourglass"></i></div>
         <div class="dash-card-body">
           <div class="dash-card-value" style="color:#f59e0b">${pendentes}</div>
           <div class="dash-card-label">Pendentes de aprovação</div>
         </div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-icon" style="background:rgba(239,68,68,.15)">🔔</div>
+        <div class="dash-card-icon" style="background:rgba(239,68,68,.15);color:#ef4444"><i class="ph ph-bell"></i></div>
         <div class="dash-card-body">
           <div class="dash-card-value" style="color:#ef4444">${comAlerta}</div>
           <div class="dash-card-label">CTOs com alertas</div>
         </div>
       </div>
       <div class="dash-card">
-        <div class="dash-card-icon" style="background:rgba(147,51,234,.15)">👥</div>
+        <div class="dash-card-icon" style="background:rgba(147,51,234,.15);color:#a855f7"><i class="ph ph-users"></i></div>
         <div class="dash-card-body">
           <div class="dash-card-value" style="color:#a855f7">${totalUsuarios}</div>
           <div class="dash-card-label">Usuários cadastrados</div>
@@ -2206,7 +2206,7 @@ async function loadDashboard() {
     <div class="dash-row">
       <!-- Gráfico por área -->
       <div class="dash-panel dash-chart-panel">
-        <div class="dash-panel-title">📊 CTOs por Área</div>
+        <div class="dash-panel-title">CTOs por Área</div>
         <div class="dash-chart">
           ${topAreas.map(([area, count]) => {
             const pct = Math.round((count / maxArea) * 100)
@@ -2225,15 +2225,15 @@ async function loadDashboard() {
 
       <!-- Status breakdown -->
       <div class="dash-panel dash-status-panel">
-        <div class="dash-panel-title">🎯 Distribuição por Status</div>
+        <div class="dash-panel-title">Distribuição por Status</div>
         <div class="dash-status-list">
           ${[
-            ['Ativa',          ativas,       '#22c55e', '🟢'],
-            ['Em manutenção',  manutencao,   '#f59e0b', '🟡'],
-            ['Danificada',     danificadas,  '#ef4444', '🔴'],
-            ['Desconhecida',   desconhecidas,'#6b7280', '⚪'],
-            ['Aprovadas',      aprovadas,    '#39ff14', '✅'],
-          ].map(([label, val, color, emoji]) => `
+            ['Ativa',          ativas,       '#22c55e'],
+            ['Em manutenção',  manutencao,   '#f59e0b'],
+            ['Danificada',     danificadas,  '#ef4444'],
+            ['Desconhecida',   desconhecidas,'#6b7280'],
+            ['Aprovadas',      aprovadas,    '#39ff14'],
+          ].map(([label, val, color]) => `
             <div class="dash-status-row">
               <span class="dash-status-dot" style="background:${color}"></span>
               <span class="dash-status-label">${label}</span>
@@ -2245,7 +2245,7 @@ async function loadDashboard() {
         </div>
 
         <!-- System health -->
-        <div class="dash-panel-title" style="margin-top:16px">⚡ Sistema</div>
+        <div class="dash-panel-title" style="margin-top:16px">Sistema</div>
         <div class="dash-health-list">
           <div class="dash-health-row">
             <span class="dash-health-dot ok"></span>
@@ -2273,7 +2273,7 @@ async function loadDashboard() {
 
     <!-- Gráfico temporal -->
     <div class="dash-panel">
-      <div class="dash-panel-title">📈 CTOs cadastradas por mês</div>
+      <div class="dash-panel-title">CTOs cadastradas por mês</div>
       <div class="dash-timeline">
         ${months.map(m => {
           const pct = Math.round((m.count / maxMonthCount) * 100)
@@ -2291,7 +2291,7 @@ async function loadDashboard() {
 
     <!-- Atividade recente -->
     <div class="dash-panel">
-      <div class="dash-panel-title">🕒 Inserções Recentes</div>
+      <div class="dash-panel-title">Inserções Recentes</div>
       <div class="dash-activity">
         ${recentes.map(c => {
           const dt = c.criado ? new Date(c.criado).toLocaleString('pt-BR') : '—'
