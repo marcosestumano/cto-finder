@@ -2251,3 +2251,7 @@ body {
 .hist-icon { color: #39ff14; }
 .dash-card-icon i { font-size: 20px; }
 .fab i, .btn-search-toggle i, .todas-btn i { font-size: 1.1em; vertical-align: -0.12em; }
+
+
+/* Segurança: painel admin nunca aparece para quem não é admin */
+body:not(.is-admin) #painel-admin { display: none !important; }

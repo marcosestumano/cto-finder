@@ -156,6 +156,12 @@ async function handleSession(session) {
     document.getElementById('login-screen').style.display = 'none'
     document.getElementById('app').style.display = 'block'
     showUserInfo(currentUser)
+    document.body.classList.toggle('is-admin', isAdmin)
+    if (!isAdmin) {
+      document.getElementById('painel-admin').classList.remove('open')
+      document.getElementById('btn-pendentes').style.display = 'none'
+      document.getElementById('admin-badge-wrap').style.display = 'none'
+    }
     if (isAdmin) {
       document.getElementById('btn-pendentes').style.display = 'flex'
       document.getElementById('admin-badge-wrap').style.display = 'block'
@@ -166,12 +172,17 @@ async function handleSession(session) {
       initSearch()
       initOffline()
       makeDraggable(document.getElementById('painel'),       true)
-      makeDraggable(document.getElementById('painel-admin'), false)
+      // Swipe do painel admin só funciona se o usuário for admin (checado a cada gesto)
+      makeDraggable(document.getElementById('painel-admin'), false, () => isAdmin)
       mapInitialized = true
     }
   } else {
     currentUser = null
     isAdmin     = false
+    document.body.classList.remove('is-admin')
+    document.getElementById('painel-admin')?.classList.remove('open')
+    document.getElementById('btn-pendentes').style.display = 'none'
+    document.getElementById('admin-badge-wrap').style.display = 'none'
     // Só mostra login se NÃO estiver processando redirect OAuth
     if (!isOAuthRedirect) {
       document.getElementById('loading-screen').style.display = 'none'
@@ -284,7 +295,7 @@ function initSearch() {
 // ══════════════════════════════════════
 //  SWIPE PARA ABRIR/FECHAR PAINÉIS
 // ══════════════════════════════════════
-function makeDraggable(panelEl, fromLeft) {
+function makeDraggable(panelEl, fromLeft, canOpen = () => true) {
   // fromLeft=true → painel vem da esquerda (#painel)
   // fromLeft=false → painel vem da direita (#painel-admin)
   const EDGE_ZONE  = 32   // px da borda da tela para iniciar arraste quando fechado
@@ -307,10 +318,16 @@ function makeDraggable(panelEl, fromLeft) {
   function commit(open) {
     panelEl.style.transition = ''
     panelEl.style.transform  = ''
-    panelEl.classList.toggle('open', open)
+    panelEl.classList.toggle('open', open && canOpen())
   }
 
   document.addEventListener('touchstart', (e) => {
+    tracking = false
+    moved    = false
+    if (!canOpen()) {
+      panelEl.classList.remove('open')
+      return
+    }
     panelW   = panelEl.offsetWidth
     startX   = e.touches[0].clientX
     startY   = e.touches[0].clientY
@@ -530,8 +547,10 @@ function initMap() {
     )
   }
 
-  document.getElementById('btn-pendentes').onclick = () =>
+  document.getElementById('btn-pendentes').onclick = () => {
+    if (!isAdmin) return
     document.getElementById('painel-admin').classList.toggle('open')
+  }
   document.getElementById('btn-fechar-admin').onclick = () =>
     document.getElementById('painel-admin').classList.remove('open')
 }
