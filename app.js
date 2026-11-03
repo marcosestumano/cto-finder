@@ -1447,12 +1447,33 @@ window.deleteCto = async (id) => {
   map.closePopup()
 }
 
-window.changeStatus = async (id, newStatus) => {
+window.changeStatus = async (id, newStatus, btn) => {
   const oldStatus = ctoData[id]?.status
-  const { data: updated } = await sb.from(TABLE).update({ status: newStatus }).eq('id', id).select().single()
+  if (!newStatus || newStatus === oldStatus) return
+  if (!confirm(`Mudar status para "${newStatus}"?`)) return
+
+  // Feedback imediato nos botões do popup
+  const wrap = btn?.closest('.status-chips')
+  wrap?.classList.add('saving')
+
+  const { data: updated, error } = await sb.rpc('set_cto_status', { p_cto_id: String(id), p_status: newStatus })
+  wrap?.classList.remove('saving')
+
+  if (error) {
+    alert(error.message?.includes('set_cto_status')
+      ? 'Mudança de status ainda não configurada no banco (rode supabase/status-cto.sql).'
+      : 'Erro ao mudar status: ' + error.message)
+    return
+  }
   logHistorico(id, 'mudou status', { de: oldStatus, para: newStatus })
-  if (updated) window._applyChange('UPDATE', updated)
-  map.closePopup()
+  if (updated) {
+    window._applyChange('UPDATE', updated)
+    // Reabre o popup já atualizado
+    if (markers[id]) {
+      markers[id].setPopupContent(buildPopupHTML(ctoData[id]))
+      markers[id].openPopup()
+    }
+  }
 }
 
 window.focusMarker = (id) => {
@@ -1661,15 +1682,27 @@ function buildPopupHTML(row) {
   const spHtml  = row.sp  ? `<div class="popup-meta"><span class="popup-tag">SP</span> ${escHtml(row.sp)}</div>` : ''
   const secHtml = row.sec ? `<div class="popup-meta"><span class="popup-tag">SEC</span> ${escHtml(row.sec)}</div>` : ''
 
-  const statusRow = isAdmin
-    ? (() => {
-        const opts = ['Ativa', 'Em manutenção', 'Danificada', 'Desconhecida']
-          .map((s) => `<option ${s === row.status ? 'selected' : ''}>${s}</option>`).join('')
-        return `<div class="popup-row">
-          <label>Status:</label>
-          <select onchange="changeStatus('${row.id}', this.value)">${opts}</select>
-        </div>`
-      })()
+  // Todo técnico pode mudar o status de uma caixa aprovada
+  const podeMudarStatus = isAdmin || row.status_aprovacao === 'aprovado'
+  const STATUS_OPCOES = [
+    ['Ativa', 'ativa', 'Ativa'],
+    ['Em manutenção', 'manut', 'Manutenção'],
+    ['Danificada', 'danif', 'Danificada'],
+    ['Desconhecida', 'desc', 'Desconhecida'],
+  ]
+  const statusInfo = row.status_por && row.status_em
+    ? `<div class="status-info">Alterado por ${escHtml(String(row.status_por).split(' ')[0])} · ${new Date(row.status_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</div>`
+    : ''
+  const statusRow = podeMudarStatus
+    ? `<div class="popup-row popup-row-status">
+        <label>Status:</label>
+        <div class="status-chips">
+          ${STATUS_OPCOES.map(([v, cls, lbl]) =>
+            `<button type="button" class="status-chip st-${cls} ${v === row.status ? 'active' : ''}"
+               onclick="changeStatus('${row.id}', '${v}', this)">${lbl}</button>`).join('')}
+        </div>
+        ${statusInfo}
+      </div>`
     : `<div class="popup-row">
         <label>Status:</label>
         <span class="popup-status-badge">${escHtml(row.status)}</span>

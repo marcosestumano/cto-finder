@@ -2486,3 +2486,44 @@ body:not(.is-admin) #painel-admin { display: none !important; }
 .aviso-toast.show { opacity: 1; transform: translate(-50%, 0); }
 .aviso-toast.ok { border-color: #166534; color: #bbf7d0; }
 .aviso-toast.error { border-color: #7f1d1d; color: #fecaca; }
+
+/* ── Status da caixa (todos os técnicos) ─────────────────── */
+.popup-row-status { flex-direction: column; align-items: stretch; gap: 6px; }
+.status-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  transition: opacity 0.15s;
+}
+.status-chips.saving { opacity: 0.5; pointer-events: none; }
+.status-chip {
+  --c: #6b7280;
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--c) 45%, transparent);
+  background: color-mix(in srgb, var(--c) 10%, #060f07);
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+.status-chip::before {
+  content: '';
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--c);
+  flex-shrink: 0;
+}
+.status-chip:active { transform: scale(0.96); }
+.status-chip.active {
+  background: color-mix(in srgb, var(--c) 28%, #060f07);
+  border-color: var(--c);
+  color: #fff;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--c) 40%, transparent);
+}
+.status-chip.st-ativa { --c: #22c55e; }
+.status-chip.st-manut { --c: #f59e0b; }
+.status-chip.st-danif { --c: #ef4444; }
+.status-chip.st-desc  { --c: #6b7280; }
+.status-info { font-size: 11px; color: #64748b; }

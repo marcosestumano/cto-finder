@@ -20,3 +20,7 @@ dist/
 # OS
 .DS_Store
 Thumbs.db
+
+# Arquivos temporários do Vite
+vite.config.js.timestamp-*
+*.bak-*
