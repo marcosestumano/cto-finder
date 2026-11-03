@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { initAvisos, openForm as openAvisoForm, removerPushDesteAparelho } from './src/avisos.js'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster'
@@ -175,10 +176,20 @@ async function handleSession(session) {
       makeDraggable(document.getElementById('painel-admin'), false, () => isAdmin)
       mapInitialized = true
     }
+
+    // Alertas da rede (tempo real + push)
+    initAvisos({
+      sb,
+      getUser: () => currentUser,
+      isAdmin: () => isAdmin,
+      findCto: findCtoDoAviso,
+      focusCto: (id) => window.focusMarker(id),
+    })
   } else {
     currentUser = null
     isAdmin     = false
     document.body.classList.remove('is-admin')
+    document.getElementById('btn-emitir-aviso').style.display = 'none'
     document.getElementById('painel-admin')?.classList.remove('open')
     document.getElementById('btn-pendentes').style.display = 'none'
     document.getElementById('admin-badge-wrap').style.display = 'none'
@@ -224,7 +235,11 @@ if (isOAuthRedirect) {
   }, 8000)
 }
 
-document.getElementById('btn-logout').onclick = () => { if (sb) sb.auth.signOut() }
+document.getElementById('btn-logout').onclick = async () => {
+  if (!sb) return
+  await removerPushDesteAparelho()
+  sb.auth.signOut()
+}
 
 // ══════════════════════════════════════
 //  BUSCA
@@ -1663,6 +1678,7 @@ function buildPopupHTML(row) {
   const adminBtns = isAdmin
     ? `<div class="popup-admin-btns">
         <button class="popup-edit" onclick="editCto('${row.id}')">Editar</button>
+        <button class="popup-alertar" onclick="alertarCto('${row.id}')"><i class="ph ph-megaphone"></i> Alertar</button>
         <button class="popup-del"  onclick="deleteCto('${row.id}')">Remover</button>
       </div>` : ''
 
@@ -2423,4 +2439,27 @@ async function loadDashboard() {
 function escHtml(s) {
   if (!s) return ''
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+
+// ── Alertas: ligação com o mapa ───────────────────────────────
+const normKey = (v) => String(v ?? '').trim().toUpperCase().replace(/\s+/g, '')
+
+// Acha a CTO citada no alerta (mesma área + SP + SEC) para o botão "Ver no mapa"
+function findCtoDoAviso(a) {
+  const area = normKey(a.area_cabo), sp = normKey(a.sp), sec = normKey(a.sec)
+  if (!area) return null
+  const hit = Object.entries(ctoData).find(([, r]) =>
+    normKey(r.area_cabo) === area &&
+    (!sp  || normKey(r.sp)  === sp) &&
+    (!sec || normKey(r.sec) === sec))
+  return hit ? hit[0] : null
+}
+
+// Botão "Alertar" no popup da CTO (admin): abre o formulário já preenchido
+window.alertarCto = (id) => {
+  const r = ctoData[id]
+  if (!r || !isAdmin) return
+  map.closePopup()
+  openAvisoForm({ tipo: 'caixa', area_cabo: r.area_cabo, sp: r.sp, sec: r.sec })
 }

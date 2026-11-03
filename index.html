@@ -97,6 +97,11 @@
   <div id="map"></div>
 
   <div class="fab-group">
+    <div class="fab-avisos-wrap">
+      <button class="fab" id="btn-avisos" title="Alertas"><i class="ph ph-bell"></i></button>
+      <span id="avisos-badge" class="avisos-badge" style="display:none">0</span>
+    </div>
+    <button class="fab fab-admin" id="btn-emitir-aviso" style="display:none" title="Emitir alerta"><i class="ph ph-megaphone"></i></button>
     <button class="fab" id="btn-add"       title="Nova CTO">＋</button>
     <button class="fab" id="btn-gps"       title="Minha localização">📍</button>
     <button class="fab" id="btn-lista"     title="Lista de CTOs">☰</button>
@@ -197,6 +202,116 @@
       </form>
     </div>
   </div>
+
+  <!-- ═══ ALERTAS ═══ -->
+  <!-- Emitir alerta (admin) -->
+  <div id="modal-aviso" class="aviso-modal" style="display:none">
+    <div class="aviso-modal-backdrop" data-close-aviso></div>
+    <div class="modal-card">
+      <h2><i class="ph ph-megaphone" style="color:#f87171"></i> Emitir alerta</h2>
+      <form id="form-aviso" autocomplete="off">
+        <div class="aviso-seg" role="tablist">
+          <button type="button" class="aviso-seg-btn active" data-tipo="caixa"><i class="ph ph-cube"></i> Caixa</button>
+          <button type="button" class="aviso-seg-btn" data-tipo="primaria"><i class="ph ph-git-branch"></i> Primária</button>
+        </div>
+
+        <div class="form-group">
+          <label>Área</label>
+          <input id="av-area" type="text" placeholder="Ex: IPFH02" maxlength="20" />
+        </div>
+
+        <div class="form-row" data-tipo-campos="caixa">
+          <div class="form-group">
+            <label>SP</label>
+            <input id="av-sp" type="text" placeholder="Ex: P22" maxlength="20" />
+          </div>
+          <div class="form-group">
+            <label>SEC</label>
+            <input id="av-sec" type="text" placeholder="Ex: 01-08" maxlength="20" />
+          </div>
+        </div>
+
+        <div class="form-row" data-tipo-campos="primaria" style="display:none">
+          <div class="form-group">
+            <label>Cabo</label>
+            <input id="av-cabo" type="text" placeholder="Ex: 01" maxlength="20" inputmode="numeric" />
+          </div>
+          <div class="form-group">
+            <label>Primária</label>
+            <input id="av-primaria" type="text" placeholder="Ex: 13" maxlength="20" inputmode="numeric" />
+          </div>
+        </div>
+
+        <div class="form-row" style="margin-top:14px">
+          <div class="form-group">
+            <label>Situação</label>
+            <select id="av-status">
+              <option>PARADA</option>
+              <option>DANIFICADA</option>
+              <option>EM MANUTENÇÃO</option>
+              <option>NORMALIZADA</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Equipe</label>
+            <select id="av-equipe">
+              <option>CABISTA</option>
+              <option>REDE</option>
+              <option value="">— Nenhuma —</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:14px">
+          <label>Observação <span class="label-auto">(opcional)</span></label>
+          <input id="av-obs" type="text" placeholder="Ex: Previsão de retorno 14h" maxlength="200" />
+        </div>
+
+        <div class="aviso-preview-label">Prévia</div>
+        <div id="av-preview" class="aviso-preview">
+          <div class="aviso-preview-title">ALERTA!</div>
+          <div class="aviso-preview-msg"></div>
+        </div>
+        <div id="av-msg" class="geocode-msg"></div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" data-close-aviso>Cancelar</button>
+          <button type="submit" class="btn-primary btn-aviso-enviar" id="av-enviar"><i class="ph ph-paper-plane-tilt"></i> Enviar alerta</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lista de alertas -->
+  <div id="avisos-sheet" class="aviso-modal" style="display:none">
+    <div class="aviso-modal-backdrop" data-close-sheet></div>
+    <div class="modal-card avisos-sheet-card">
+      <div class="avisos-sheet-head">
+        <h2><i class="ph ph-bell"></i> Alertas</h2>
+        <button class="avisos-sheet-close" data-close-sheet aria-label="Fechar">✕</button>
+      </div>
+      <div id="avisos-push-box"></div>
+      <ul id="avisos-lista" class="avisos-lista"></ul>
+    </div>
+  </div>
+
+  <!-- Alerta em tela cheia -->
+  <div id="aviso-overlay" class="aviso-overlay" style="display:none" role="alertdialog" aria-live="assertive">
+    <div class="aviso-overlay-card">
+      <div class="aviso-overlay-icon"><i class="ph-fill ph-warning"></i></div>
+      <div class="aviso-overlay-title">ALERTA!</div>
+      <div class="aviso-overlay-msg"></div>
+      <div class="aviso-overlay-obs"></div>
+      <div class="aviso-overlay-meta"></div>
+      <div class="aviso-overlay-actions">
+        <button class="aviso-btn-mapa" style="display:none"><i class="ph ph-map-pin"></i> Ver no mapa</button>
+        <button class="aviso-btn-ciente">Ciente</button>
+      </div>
+      <div class="aviso-overlay-more"></div>
+    </div>
+  </div>
+
+  <div id="aviso-toast" class="aviso-toast"></div>
 
   <div id="painel">
     <div class="painel-header">

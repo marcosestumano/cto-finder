@@ -31,6 +31,11 @@ export default defineConfig({
         // Cache do app shell (JS, CSS, HTML)
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
 
+        // Handlers de push dos alertas (public/push-sw.js)
+        importScripts: ['push-sw.js'],
+        // A API de envio não pode cair no fallback do index.html
+        navigateFallbackDenylist: [/^\/api\//],
+
         runtimeCaching: [
           // Tiles do Mapbox — Network First, fallback no cache
           {
