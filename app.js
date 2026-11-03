@@ -597,7 +597,111 @@ function initMap() {
   }
   document.getElementById('btn-fechar-admin').onclick = () =>
     document.getElementById('painel-admin').classList.remove('open')
+
+  startLiveLocation()
 }
+
+// ══════════════════════════════════════
+//  MINHA LOCALIZAÇÃO (ponto azul ao vivo)
+//  Só orientação visual — não interfere em cliques nem no cadastro.
+// ══════════════════════════════════════
+let meMarker = null, meAccuracy = null, meWatchId = null
+let meShown = null, meAnim = 0
+
+function meIcon() {
+  return L.divIcon({
+    className: 'me-loc-wrap',
+    html: `<div class="me-loc">
+             <div class="me-loc-heading"></div>
+             <div class="me-loc-pulse"></div>
+             <div class="me-loc-dot"></div>
+           </div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+  })
+}
+
+// Desliza o ponto até a nova posição em vez de "teleportar"
+function animateMeTo(target) {
+  if (!meShown) { meShown = target; return applyMe(target) }
+  const from = meShown, t0 = performance.now(), dur = 600
+  cancelAnimationFrame(meAnim)
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / dur)
+    const e = 1 - Math.pow(1 - k, 3)
+    const ll = L.latLng(from.lat + (target.lat - from.lat) * e,
+                        from.lng + (target.lng - from.lng) * e)
+    applyMe(ll)
+    if (k < 1) meAnim = requestAnimationFrame(step)
+    else meShown = target
+  }
+  meAnim = requestAnimationFrame(step)
+}
+
+function applyMe(ll) {
+  meMarker?.setLatLng(ll)
+  meAccuracy?.setLatLng(ll)
+}
+
+function onMyPosition(pos) {
+  const { latitude, longitude, accuracy, heading, speed } = pos.coords
+  const ll = L.latLng(latitude, longitude)
+
+  if (!meMarker) {
+    meMarker = L.marker(ll, {
+      icon: meIcon(),
+      interactive: false,
+      keyboard: false,
+      zIndexOffset: 1000,
+    }).addTo(map)
+    meAccuracy = L.circle(ll, {
+      radius: accuracy,
+      interactive: false,
+      stroke: true, weight: 1,
+      color: '#3b82f6', opacity: 0.35,
+      fillColor: '#3b82f6', fillOpacity: 0.12,
+    }).addTo(map)
+    meShown = ll
+  } else {
+    animateMeTo(ll)
+  }
+
+  // Círculo de precisão: esconde se o GPS estiver muito impreciso (> 300 m)
+  meAccuracy.setRadius(accuracy)
+  meAccuracy.setStyle({ opacity: accuracy > 300 ? 0 : 0.35, fillOpacity: accuracy > 300 ? 0 : 0.12 })
+
+  // Setinha de direção só quando está se movendo
+  const el = meMarker.getElement()?.querySelector('.me-loc')
+  if (el) {
+    const moving = heading != null && !isNaN(heading) && (speed ?? 0) > 0.7
+    el.classList.toggle('has-heading', moving)
+    if (moving) el.style.setProperty('--heading', `${heading}deg`)
+  }
+}
+
+function startLiveLocation() {
+  if (!navigator.geolocation || meWatchId != null) return
+  meWatchId = navigator.geolocation.watchPosition(
+    onMyPosition,
+    (err) => {
+      // Permissão negada: para de tentar, sem alertas
+      if (err.code === err.PERMISSION_DENIED) stopLiveLocation()
+    },
+    { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+  )
+}
+
+function stopLiveLocation() {
+  if (meWatchId != null) navigator.geolocation.clearWatch(meWatchId)
+  meWatchId = null
+}
+
+// Economiza bateria: pausa o GPS com o app em segundo plano
+document.addEventListener('visibilitychange', () => {
+  if (!map) return
+  if (document.hidden) stopLiveLocation()
+  else startLiveLocation()
+})
 
 // ── Filtros de status ─────────────────────────────────────────
 function initFilters() {
