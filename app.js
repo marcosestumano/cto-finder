@@ -5,7 +5,6 @@ import 'leaflet.markercluster'
 import 'leaflet.markercluster/dist/MarkerCluster.css'
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css'
 import { queueCto, getPendingCtos, removePendingCto, getPendingCount } from './src/offline-queue.js'
-import { scanCtoLabel, disposeWorker } from './src/ocr.js'
 
 const SUPABASE_URL  = import.meta.env.VITE_SUPABASE_URL
 const SUPABASE_KEY  = import.meta.env.VITE_SUPABASE_KEY
@@ -1593,69 +1592,6 @@ async function loadBinagens(ctoId) {
   }).join('')
 }
 
-// ── Scan de etiqueta por foto ─────────────────────────────────
-window.scanFoto = function () {
-  document.getElementById('input-scan-foto').click()
-}
-
-// ── OCR — scan da etiqueta da CTO (Tesseract.js, roda no browser) ──
-function initOcrButton() {
-  const btn   = document.getElementById('btn-scan-foto')
-  const input = document.getElementById('input-scan-foto')
-  if (!btn || !input || btn._ocrInit) return
-  btn._ocrInit = true
-
-  input.onchange = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    btn.disabled  = true
-    setGeocodeMsg('Iniciando OCR…', '')
-
-    const updateBtn = (msg) => {
-      btn.innerHTML = `<i class="ph ph-spinner"></i> ${msg}`
-      setGeocodeMsg(msg, '')
-    }
-
-    // Timeout de 40s para não travar indefinidamente
-    let timedOut = false
-    const timeout = setTimeout(() => {
-      timedOut = true
-      btn.disabled  = false
-      btn.innerHTML = '<i class="ph ph-camera"></i> Escanear etiqueta com câmera'
-      setGeocodeMsg('Tempo limite atingido — tente com foto mais nítida.', 'error')
-      input.value = ''
-    }, 40000)
-
-    try {
-      const dados = await scanCtoLabel(file, updateBtn)
-      if (timedOut) return
-
-      clearTimeout(timeout)
-      const preenchido = []
-      if (dados.area_cabo) { document.getElementById('f-area-cabo').value = dados.area_cabo; preenchido.push('Área: ' + dados.area_cabo) }
-      if (dados.sp)        { document.getElementById('f-sp').value        = dados.sp;        preenchido.push('SP: '   + dados.sp) }
-      if (dados.sec)       { document.getElementById('f-sec').value       = dados.sec;       preenchido.push('SEC: '  + dados.sec) }
-
-      if (preenchido.length) {
-        setGeocodeMsg(preenchido.join(' · '), 'success')
-      } else {
-        setGeocodeMsg('Não reconheceu os dados — preencha manualmente.', 'error')
-      }
-    } catch (err) {
-      clearTimeout(timeout)
-      if (!timedOut) setGeocodeMsg('Erro ao processar imagem: ' + err.message, 'error')
-      console.error('[OCR]', err)
-    } finally {
-      if (!timedOut) {
-        btn.disabled  = false
-        btn.innerHTML = '<i class="ph ph-camera"></i> Escanear etiqueta com câmera'
-        input.value   = ''
-      }
-    }
-  }
-}
-
 window.toggleFttaFields = function(checked) {
   const el = document.getElementById('ftta-fields')
   if (el) el.style.display = checked ? 'block' : 'none'
@@ -1682,7 +1618,6 @@ function openModal() {
   if (fttaFields) fttaFields.style.display = 'none'
   setGeocodeMsg('', '')
   document.getElementById('modal').style.display = 'flex'
-  initOcrButton()
   document.getElementById('f-endereco').focus()
 }
 
