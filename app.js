@@ -1460,8 +1460,9 @@ window.changeStatus = async (id, newStatus, btn) => {
   wrap?.classList.remove('saving')
 
   if (error) {
+    console.error('[status]', error)
     alert(error.message?.includes('set_cto_status')
-      ? 'Mudança de status ainda não configurada no banco (rode supabase/status-cto.sql).'
+      ? 'Mudança de status ainda não configurada no banco (rode supabase/status-cto.sql).\n\nDetalhe: ' + error.message
       : 'Erro ao mudar status: ' + error.message)
     return
   }
