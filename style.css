@@ -666,7 +666,7 @@ body {
   background: #1c1008;
   z-index: 950;
   transform: translateX(100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
   display: flex;
   flex-direction: column;
   box-shadow: -4px 0 24px rgba(0,0,0,0.5);
@@ -897,7 +897,7 @@ body {
   background: #0d1a0e;
   z-index: 950;
   transform: translateX(-100%);
-  transition: transform 0.3s ease;
+  transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
   display: flex;
   flex-direction: column;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
@@ -916,6 +916,7 @@ body {
 
 /* Painel admin — handle no lado oposto */
 #painel-admin { touch-action: pan-y; }
+#lista-ctos, #painel-admin .admin-list { overscroll-behavior: contain; }
 
 .painel-header {
   background: linear-gradient(135deg, #0d2a12, #061a08);

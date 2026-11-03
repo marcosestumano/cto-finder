@@ -298,91 +298,135 @@ function initSearch() {
 function makeDraggable(panelEl, fromLeft, canOpen = () => true) {
   // fromLeft=true → painel vem da esquerda (#painel)
   // fromLeft=false → painel vem da direita (#painel-admin)
-  const EDGE_ZONE  = 32   // px da borda da tela para iniciar arraste quando fechado
-  const SNAP_RATIO = 0.35 // fração da largura para "snap" abrir/fechar
+  const EDGE_ZONE   = 28    // px da borda para puxar o painel fechado
+  const LOCK_DIST   = 8     // px antes de decidir se o gesto é horizontal ou vertical
+  const SNAP_RATIO  = 0.4   // fração da largura para abrir/fechar sem "flick"
+  const FLICK_SPEED = 0.35  // px/ms — um peteleco rápido já decide a direção
+  const EASE        = 'cubic-bezier(0.22, 0.61, 0.36, 1)'
 
-  let startX = 0, startY = 0, panelW = 0, tracking = false, moved = false
+  let startX = 0, startY = 0, panelW = 0, base = 0, curX = 0
+  let candidate = false, dragging = false, rafId = 0
+  let samples = []   // últimas posições para medir velocidade
 
-  function baseOffset() {
-    // offset inicial em px conforme estado atual
-    const open = panelEl.classList.contains('open')
-    if (fromLeft)  return open ? 0 : -panelW
-    else           return open ? 0 :  panelW
+  panelEl.style.willChange = 'transform'
+
+  const isOpen = () => panelEl.classList.contains('open')
+  const closedX = () => (fromLeft ? -panelW : panelW)
+
+  function render() {
+    rafId = 0
+    panelEl.style.transform = `translateX(${curX}px)`
   }
 
-  function setX(px) {
-    panelEl.style.transition = 'none'
-    panelEl.style.transform  = `translateX(${px}px)`
+  function reset() {
+    candidate = false
+    dragging  = false
+    samples   = []
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0 }
   }
 
-  function commit(open) {
-    panelEl.style.transition = ''
-    panelEl.style.transform  = ''
+  function settle(open, velocity) {
+    // Duração proporcional à distância que falta (e mais rápida se o dedo vinha rápido)
+    const target   = open ? 0 : closedX()
+    const remain   = Math.abs(target - curX)
+    const speed    = Math.max(Math.abs(velocity), 1.2)          // px/ms
+    const duration = Math.min(320, Math.max(140, remain / speed))
+
+    panelEl.style.transition = `transform ${duration}ms ${EASE}`
+    panelEl.style.transform  = `translateX(${target}px)`
     panelEl.classList.toggle('open', open && canOpen())
+
+    const done = () => {
+      panelEl.removeEventListener('transitionend', done)
+      clearTimeout(fallback)
+      // Devolve o controle para o CSS (.open)
+      panelEl.style.transition = ''
+      panelEl.style.transform  = ''
+    }
+    const fallback = setTimeout(done, duration + 60)
+    panelEl.addEventListener('transitionend', done)
   }
 
-  document.addEventListener('touchstart', (e) => {
-    tracking = false
-    moved    = false
-    if (!canOpen()) {
-      panelEl.classList.remove('open')
-      return
-    }
-    panelW   = panelEl.offsetWidth
-    startX   = e.touches[0].clientX
-    startY   = e.touches[0].clientY
-    tracking = false
-    moved    = false
+  window.addEventListener('touchstart', (e) => {
+    reset()
+    if (e.touches.length !== 1) return
+    if (!canOpen()) { panelEl.classList.remove('open'); return }
 
-    const open = panelEl.classList.contains('open')
+    const x = e.touches[0].clientX
+    const y = e.touches[0].clientY
+    panelW  = panelEl.offsetWidth
+    const open = isOpen()
+
     if (fromLeft) {
-      if (open  && startX < panelW + 10)               tracking = true
-      if (!open && startX < EDGE_ZONE)                 tracking = true
+      candidate = open ? x < panelW + 16 : x < EDGE_ZONE
     } else {
-      if (open  && startX > window.innerWidth - panelW - 10) tracking = true
-      if (!open && startX > window.innerWidth - EDGE_ZONE)   tracking = true
+      candidate = open ? x > window.innerWidth - panelW - 16 : x > window.innerWidth - EDGE_ZONE
     }
-  }, { passive: true })
+    if (!candidate) return
 
-  document.addEventListener('touchmove', (e) => {
-    if (!tracking) return
-    const dx = e.touches[0].clientX - startX
-    const dy = e.touches[0].clientY - startY
+    startX = x; startY = y
+    base   = open ? 0 : closedX()
+    curX   = base
+    samples = [{ x, t: e.timeStamp }]
+  }, { capture: true, passive: true })
 
-    if (!moved) {
-      // Cancela se gesto for mais vertical que horizontal
-      if (Math.abs(dy) > Math.abs(dx)) { tracking = false; return }
-      moved = true
+  window.addEventListener('touchmove', (e) => {
+    if (!candidate) return
+    const x  = e.touches[0].clientX
+    const y  = e.touches[0].clientY
+    const dx = x - startX
+    const dy = y - startY
+
+    if (!dragging) {
+      // Espera o dedo andar um pouco antes de decidir a direção
+      if (Math.abs(dx) < LOCK_DIST && Math.abs(dy) < LOCK_DIST) return
+      if (Math.abs(dy) > Math.abs(dx)) { reset(); return }   // é scroll vertical da lista
+      // Painel aberto: só arrasta na direção de fechar; fechado: só na de abrir
+      const wantsClose = fromLeft ? dx < 0 : dx > 0
+      if (isOpen() !== wantsClose) { reset(); return }
+      dragging = true
+      startX = x   // começa do ponto de trava, sem "pulo"
+      panelEl.style.transition = 'none'
     }
 
+    // Impede o mapa/lista de se mexer junto com o painel
     e.preventDefault()
-    const base    = baseOffset()
-    const raw     = base + dx
-    const clamped = fromLeft
-      ? Math.max(-panelW, Math.min(0, raw))
-      : Math.max(0,       Math.min(panelW, raw))
-    setX(clamped)
-  }, { passive: false })
+    e.stopPropagation()
 
-  document.addEventListener('touchend', (e) => {
-    if (!tracking || !moved) { tracking = false; return }
-    tracking = false
+    const raw = base + (x - startX)
+    curX = fromLeft ? Math.max(-panelW, Math.min(0, raw))
+                    : Math.max(0, Math.min(panelW, raw))
 
-    const dx   = e.changedTouches[0].clientX - startX
-    const open = panelEl.classList.contains('open')
+    samples.push({ x, t: e.timeStamp })
+    if (samples.length > 5) samples.shift()
 
-    let shouldOpen
-    if (fromLeft) {
-      shouldOpen = open
-        ? dx > -panelW * SNAP_RATIO   // estava aberto: fecha só se arrastou o suficiente
-        : dx >  panelW * SNAP_RATIO   // estava fechado: abre se arrastou o suficiente
-    } else {
-      shouldOpen = open
-        ? dx <  panelW * SNAP_RATIO
-        : dx < -panelW * SNAP_RATIO
+    if (!rafId) rafId = requestAnimationFrame(render)
+  }, { capture: true, passive: false })
+
+  function onEnd() {
+    if (!dragging) { reset(); return }
+    if (rafId) { cancelAnimationFrame(rafId); rafId = 0; render() }
+
+    // Velocidade média das últimas amostras
+    let v = 0
+    if (samples.length > 1) {
+      const a = samples[0], b = samples[samples.length - 1]
+      const dt = b.t - a.t
+      if (dt > 0) v = (b.x - a.x) / dt
     }
-    commit(shouldOpen)
-  }, { passive: true })
+    const openDir = fromLeft ? v : -v          // >0 = movendo para abrir
+    const shownFrac = 1 - Math.abs(curX) / panelW
+
+    let open
+    if (Math.abs(v) > FLICK_SPEED) open = openDir > 0
+    else open = isOpen() ? shownFrac > 1 - SNAP_RATIO : shownFrac > SNAP_RATIO
+
+    settle(open, v)
+    reset()
+  }
+
+  window.addEventListener('touchend',    onEnd, { capture: true, passive: true })
+  window.addEventListener('touchcancel', onEnd, { capture: true, passive: true })
 }
 
 // ══════════════════════════════════════
