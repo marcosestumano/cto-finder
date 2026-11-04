@@ -957,7 +957,7 @@ function buildBuildingPopupHTML(key) {
     const andar = c.andar ? `${c.andar}º andar` : 'Andar —'
     const comp  = c.complemento ? ` · ${c.complemento}` : ''
     return `
-      <div class="bld-floor-row" onclick="showCtoDetails('${key}','${c.id}')">
+      <div class="bld-floor-row" onclick="event.stopPropagation();showCtoDetails('${key}','${c.id}')">
         <span class="bld-floor-dot" style="background:${sc}"></span>
         <div class="bld-floor-info">
           <span class="bld-floor-andar">${escHtml(andar)}${escHtml(comp)}</span>
@@ -1002,7 +1002,7 @@ window.showCtoDetails = (key, ctoId) => {
   const bm  = buildingMarkers[key]
   const row = ctoData[ctoId]
   if (!bm || !row) return
-  const back = `<button onclick="showBuildingPopup('${key}')" class="bld-back-btn">← Voltar ao prédio</button>`
+  const back = `<button onclick="event.stopPropagation();showBuildingPopup('${key}')" class="bld-back-btn">← Voltar ao prédio</button>`
   setPopupNoFlicker(bm, buildPopupHTML(row) + back)
   // Carrega comentários manualmente (evento popupopen não dispara no update)
   setTimeout(() => { loadComentarios(ctoId); loadBinagens(ctoId) }, 50)
@@ -1068,6 +1068,12 @@ function upsertBuildingMarker(key) {
   const m = L.marker([group.lat, group.lng], { icon: makeBuildingIcon(ctosArr) })
     .bindPopup(buildBuildingPopupHTML(key))
   m._buildingKey = key
+  // Ao fechar, volta para a lista de andares — próxima abertura começa pelo prédio
+  m.on('popupclose', () => {
+    setTimeout(() => {
+      if (!map.hasLayer(m.getPopup())) m.setPopupContent(buildBuildingPopupHTML(key))
+    }, 0)
+  })
   buildingMarkers[key] = m
   clusterGroup.addLayer(m)
 }
