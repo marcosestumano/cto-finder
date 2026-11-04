@@ -2582,3 +2582,14 @@ body:not(.is-admin) #painel-admin { display: none !important; }
 .pl-dist { font-size: 13px; font-weight: 700; color: #86efac; white-space: nowrap; }
 .pl-sep { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 16px 6px; }
 .pl-empty { padding: 18px 16px; font-size: 13px; color: #94a3b8; }
+
+
+/* ── Aviso de CTO duplicada ── */
+#f-area-cabo, #f-sp, #f-sec, #edit-area-cabo, #edit-sp, #edit-sec { text-transform: uppercase; }
+.dup-aviso { background: #2a1a05; border: 1.5px solid #f59e0b; border-radius: 10px; padding: 10px 12px; margin-top: 14px; }
+.dup-title { color: #fcd34d; font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.dup-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; border-top: 1px solid rgba(245,158,11,0.2); }
+.dup-item strong { display: block; color: #f1f5f9; font-size: 13px; }
+.dup-item small { display: block; color: #94a3b8; font-size: 11px; }
+.dup-ver { flex-shrink: 0; background: #f59e0b; color: #1c1008; border: none; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+.dup-hint { color: #fcd34d; font-size: 11px; margin-top: 6px; opacity: 0.85; }

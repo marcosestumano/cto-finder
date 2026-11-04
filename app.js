@@ -1302,6 +1302,25 @@ async function geocodeAddress(endereco, numero, bairro) {
 document.getElementById('form-cto').onsubmit = async (e) => {
   e.preventDefault()
   const btn      = document.getElementById('btn-salvar')
+
+  // ── Aviso de CTO duplicada (área + SP + SEC) ──────────────────
+  {
+    const area = document.getElementById('f-area-cabo').value
+    const sp   = document.getElementById('f-sp').value
+    const sec  = document.getElementById('f-sec').value
+    const chave = chaveCto(area, sp, sec)
+    if (dupConfirmado !== chave) {
+      btn.disabled = true; btn.textContent = 'Verificando…'
+      const dups = await buscarDuplicadas(area, sp, sec, null)
+      btn.disabled = false; btn.textContent = 'Salvar'
+      if (dups.length) {
+        dupConfirmado = chave
+        mostrarAvisoDuplicada(dups)
+        btn.textContent = 'Salvar mesmo assim'
+        return
+      }
+    }
+  }
   const endereco = document.getElementById('f-endereco').value.trim()
   const numero   = document.getElementById('f-numero').value.trim()
   const bairro   = document.getElementById('f-bairro').value.trim()
@@ -1337,9 +1356,9 @@ document.getElementById('form-cto').onsubmit = async (e) => {
     endereco:         endereco,
     numero:           numero,
     bairro:           bairro,
-    area_cabo:        document.getElementById('f-area-cabo').value.trim(),
-    sp:               document.getElementById('f-sp').value.trim(),
-    sec:              document.getElementById('f-sec').value.trim(),
+    area_cabo:        document.getElementById('f-area-cabo').value.trim().toUpperCase(),
+    sp:               document.getElementById('f-sp').value.trim().toUpperCase(),
+    sec:              document.getElementById('f-sec').value.trim().toUpperCase(),
     status:           document.getElementById('f-status').value,
     lat:              pendingLatLng.lat,
     lng:              pendingLatLng.lng,
@@ -1861,6 +1880,7 @@ function openModal() {
   const fttaFields = document.getElementById('ftta-fields')
   if (fttaFields) fttaFields.style.display = 'none'
   setGeocodeMsg('', '')
+  limparAvisoDuplicada()
   document.getElementById('modal').style.display = 'flex'
   document.getElementById('f-endereco').focus()
 }
@@ -2390,6 +2410,8 @@ window.editCto = function (id) {
   }
   if (document.getElementById('edit-andar')) document.getElementById('edit-andar').value = row.andar || ''
   if (document.getElementById('edit-complemento')) document.getElementById('edit-complemento').value = row.complemento || ''
+  editDupConfirmado = null
+  document.getElementById('btn-edit-salvar').textContent = 'Salvar'
   document.getElementById('modal-edit').style.display      = 'flex'
 }
 
@@ -2408,14 +2430,31 @@ function initAdminPanel() {
   salvar.onclick = async () => {
     const id  = document.getElementById('edit-id').value
     const btn = salvar
+    {
+      const area = document.getElementById('edit-area-cabo').value
+      const sp   = document.getElementById('edit-sp').value
+      const sec  = document.getElementById('edit-sec').value
+      const chave = chaveCto(area, sp, sec)
+      if (editDupConfirmado !== chave) {
+        const dups = await buscarDuplicadas(area, sp, sec, id)
+        if (dups.length) {
+          editDupConfirmado = chave
+          const msg = document.getElementById('edit-msg')
+          msg.textContent = `⚠ Já existe ${descreverCto(dups[0])}${dups.length > 1 ? ` (+${dups.length - 1})` : ''}. Toque em Salvar de novo para confirmar.`
+          msg.className   = 'geocode-msg error'
+          btn.textContent = 'Salvar mesmo assim'
+          return
+        }
+      }
+    }
     btn.disabled = true; btn.textContent = 'Salvando…'
     const { data: updated, error } = await sb.from(TABLE).update({
       endereco:         document.getElementById('edit-endereco').value.trim(),
       numero:           document.getElementById('edit-numero').value.trim(),
       bairro:           document.getElementById('edit-bairro').value.trim(),
-      area_cabo:        document.getElementById('edit-area-cabo').value.trim(),
-      sp:               document.getElementById('edit-sp').value.trim(),
-      sec:              document.getElementById('edit-sec').value.trim(),
+      area_cabo:        document.getElementById('edit-area-cabo').value.trim().toUpperCase(),
+      sp:               document.getElementById('edit-sp').value.trim().toUpperCase(),
+      sec:              document.getElementById('edit-sec').value.trim().toUpperCase(),
       status:           document.getElementById('edit-status').value,
       status_aprovacao: document.getElementById('edit-status-aprovacao').value,
       ftta:             document.getElementById('edit-ftta')?.checked || false,
@@ -2682,6 +2721,100 @@ function escHtml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
+
+// ── Detecção de CTO duplicada ─────────────────────────────────
+// Mesma regra do SQL norm_cto_campo(): ignora maiúsc./minúsc., espaços,
+// zeros à esquerda e tipo de separador ("01 a 08" = "1-8" = "01/08").
+function normCampo(v) {
+  return String(v ?? '').toUpperCase()
+    .replace(/\s+/g, '')
+    .replace(/[–—\/_]/g, '-')
+    .replace(/(\d)A(\d)/g, '$1-$2')
+    .replace(/(^|\D)0+(\d)/g, '$1$2')
+}
+function chaveCto(area, sp, sec) {
+  return [normCampo(area), normCampo(sp), normCampo(sec)].join('|')
+}
+
+let dupConfirmado     = null   // chave já confirmada no cadastro ("salvar mesmo assim")
+let editDupConfirmado = null   // idem na edição
+
+async function buscarDuplicadas(area, sp, sec, ignorarId) {
+  if (!normCampo(area)) return []
+  const chave = chaveCto(area, sp, sec)
+  const achadas = new Map()
+  Object.values(ctoData).forEach(r => {
+    if (!r || String(r.id) === String(ignorarId)) return
+    if (chaveCto(r.area_cabo, r.sp, r.sec) === chave) achadas.set(String(r.id), r)
+  })
+  // Consulta no banco também pega pendentes de outros técnicos (precisa do supabase/cto-duplicada.sql)
+  if (sb && navigator.onLine) {
+    try {
+      const { data, error } = await sb.rpc('buscar_cto_duplicada', {
+        p_area: area, p_sp: sp, p_sec: sec, p_ignorar_id: ignorarId != null ? String(ignorarId) : null,
+      })
+      if (!error && Array.isArray(data)) data.forEach(r => { if (!achadas.has(String(r.id))) achadas.set(String(r.id), r) })
+    } catch (_) {}
+  }
+  return [...achadas.values()]
+}
+
+function descreverCto(r) {
+  const partes = [r.area_cabo || 'CTO', r.sp ? 'SP ' + r.sp : '', r.sec ? 'SEC ' + r.sec : ''].filter(Boolean).join(' · ')
+  const pend = r.status_aprovacao && r.status_aprovacao !== 'aprovado' ? ' (aguardando aprovação)' : ''
+  return partes + pend
+}
+
+function limparAvisoDuplicada() {
+  dupConfirmado = null
+  document.getElementById('dup-aviso')?.remove()
+  const btn = document.getElementById('btn-salvar')
+  if (btn && btn.textContent === 'Salvar mesmo assim') btn.textContent = 'Salvar'
+}
+
+function mostrarAvisoDuplicada(dups) {
+  document.getElementById('dup-aviso')?.remove()
+  const form    = document.getElementById('form-cto')
+  const actions = form.querySelector('.form-actions')
+  const el = document.createElement('div')
+  el.id = 'dup-aviso'
+  el.className = 'dup-aviso'
+  const itens = dups.slice(0, 3).map(r => {
+    const dist = (pendingLatLng && r.lat != null && r.lng != null)
+      ? ` — a ${fmtDist(pendingLatLng.distanceTo(L.latLng(r.lat, r.lng)))} daqui` : ''
+    const end  = [r.endereco, r.numero].filter(Boolean).join(', ')
+    const ver  = ctoData[r.id]
+      ? `<button type="button" class="dup-ver" onclick="verCtoDuplicada('${r.id}')">Ver caixa</button>` : ''
+    return `<div class="dup-item"><div><strong>${escHtml(descreverCto(r))}</strong><small>${escHtml(end)}${dist}</small></div>${ver}</div>`
+  }).join('')
+  el.innerHTML = `
+    <div class="dup-title"><i class="ph ph-warning"></i> Essa caixa já parece estar cadastrada</div>
+    ${itens}
+    <div class="dup-hint">Se for outra caixa, confira Área, SP e SEC. Para cadastrar assim mesmo, toque em <b>Salvar mesmo assim</b>.</div>`
+  form.insertBefore(el, actions)
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+}
+
+window.verCtoDuplicada = (id) => {
+  closeModal()
+  window.focusMarker(id)
+}
+
+// Mudou Área/SP/SEC → some o aviso e volta a verificar
+;['f-area-cabo', 'f-sp', 'f-sec'].forEach(fid => {
+  document.getElementById(fid)?.addEventListener('input', () => {
+    if (dupConfirmado !== null) limparAvisoDuplicada()
+  })
+})
+;['edit-area-cabo', 'edit-sp', 'edit-sec'].forEach(fid => {
+  document.getElementById(fid)?.addEventListener('input', () => {
+    if (editDupConfirmado === null) return
+    editDupConfirmado = null
+    const msg = document.getElementById('edit-msg')
+    msg.textContent = ''; msg.className = 'geocode-msg'
+    document.getElementById('btn-edit-salvar').textContent = 'Salvar'
+  })
+})
 
 // ── Alertas: ligação com o mapa ───────────────────────────────
 const normKey = (v) => String(v ?? '').trim().toUpperCase().replace(/\s+/g, '')
