@@ -34,7 +34,7 @@ export default defineConfig({
         // Handlers de push dos alertas (public/push-sw.js)
         importScripts: ['push-sw.js'],
         // A API de envio não pode cair no fallback do index.html
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/privacidade/],
 
         runtimeCaching: [
           // Tiles do Mapbox — Network First, fallback no cache

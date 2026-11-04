@@ -210,6 +210,17 @@ body {
   color: #2d5a37;
   letter-spacing: 0.4px;
 }
+.login-footer p { margin: 0; }
+.login-privacy-link {
+  display: inline-block;
+  color: #86efac;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  margin-bottom: 10px;
+}
+.login-privacy-link:hover { color: #39ff14; }
 
 /* ══════════════════════════════════════
    APP / MAPA
