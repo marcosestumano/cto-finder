@@ -171,6 +171,7 @@ async function handleSession(session) {
       initMap()
       initSearch()
       initOffline()
+      initPortasLivres()
       makeDraggable(document.getElementById('painel'),       true)
       // Swipe do painel admin só funciona se o usuário for admin (checado a cada gesto)
       makeDraggable(document.getElementById('painel-admin'), false, () => isAdmin)
@@ -802,6 +803,7 @@ async function loadCtos() {
   if (error) { console.error(error.message); return }
 
   await loadAlertas()
+  await loadBinagemConhecida()
 
   data.forEach((row) => {
     if (row.status_aprovacao === 'aprovado') addMarker(row)
@@ -830,6 +832,10 @@ async function loadCtos() {
         addMarkerPendenteOwn(row)
       }
     } else if (eventType === 'UPDATE') {
+      const prev = ctoData[row.id]
+      if (prev && getPortasBinadas(prev).join(',') !== getPortasBinadas(row).join(',')) {
+        binagemConhecida.add(String(row.id))
+      }
       removeMarker(row.id)
       removeListItem(row.id)
       removePendenteItem(row.id)
@@ -873,8 +879,9 @@ function makeIcon(status, row) {
   const { area, sp } = markerLabel(row)
   const html = `
     <div style="display:flex;flex-direction:column;align-items:center;">
-      <div style="color:${c};font-size:34px;line-height:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8))">
+      <div style="position:relative;color:${c};font-size:34px;line-height:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8))">
         <i class="ph-fill ph-battery-vertical-full"></i>
+        ${portasBadgeHTML(row)}
       </div>
       <div style="background:#060f07;border:1.5px solid ${c};border-radius:4px;padding:2px 6px;margin-top:1px;text-align:center;white-space:nowrap;line-height:1.4;box-shadow:0 2px 6px rgba(0,0,0,0.6)">
         <div style="font-size:10px;font-weight:800;color:#fff;font-family:'Courier New',monospace;letter-spacing:0.01em">${area}</div>
@@ -890,8 +897,9 @@ function makeIconAlerta(status, row) {
   const { area, sp } = markerLabel(row)
   const html = `
     <div style="display:flex;flex-direction:column;align-items:center;position:relative;">
-      <div style="color:${c};font-size:34px;line-height:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8))">
+      <div style="position:relative;color:${c};font-size:34px;line-height:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8))">
         <i class="ph-fill ph-battery-vertical-full"></i>
+        ${portasBadgeHTML(row)}
       </div>
       <div style="position:absolute;top:-5px;right:-2px;background:#f97316;color:#fff;font-size:11px;font-weight:800;border-radius:50%;width:17px;height:17px;display:flex;align-items:center;justify-content:center;line-height:1;box-shadow:0 0 6px rgba(249,115,22,0.7)">!</div>
       <div style="background:#060f07;border:1.5px solid ${c};border-radius:4px;padding:2px 6px;margin-top:1px;text-align:center;white-space:nowrap;line-height:1.4;box-shadow:0 2px 6px rgba(0,0,0,0.6)">
@@ -961,7 +969,7 @@ function buildBuildingPopupHTML(key) {
         <span class="bld-floor-dot" style="background:${sc}"></span>
         <div class="bld-floor-info">
           <span class="bld-floor-andar">${escHtml(andar)}${escHtml(comp)}</span>
-          <span class="bld-floor-area">${escHtml(c.area_cabo || '—')}${c.sp ? ' · SP: ' + escHtml(c.sp) : ''}</span>
+          <span class="bld-floor-area">${escHtml(c.area_cabo || '—')}${c.sp ? ' · SP: ' + escHtml(c.sp) : ''}${portasTextoCurto(c)}</span>
         </div>
         <span class="bld-floor-status" style="color:${sc}">${escHtml(c.status)}</span>
       </div>`
@@ -1501,6 +1509,203 @@ window.focusMarker = (id) => {
   }
 }
 
+// ── Ocupação de portas + "porta livre perto" ─────────────────
+// Caixa com portas_binadas vazio pode ser "todas livres" OU "nunca conferida".
+// Consideramos conhecida se tem porta binada ou se existe registro no histórico.
+let binagemConhecida = new Set()
+
+async function loadBinagemConhecida() {
+  if (!sb) return
+  const ids = new Set()
+  const PAGE = 1000
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await sb.from('binagens').select('cto_id').range(from, from + PAGE - 1)
+    if (error || !data) break
+    data.forEach(r => ids.add(String(r.cto_id)))
+    if (data.length < PAGE) break
+  }
+  binagemConhecida = ids
+}
+
+function infoPortas(row) {
+  const usadas    = getPortasBinadas(row).length
+  const conhecida = usadas > 0 || binagemConhecida.has(String(row?.id))
+  const livres    = Math.max(0, TOTAL_PORTAS - usadas)
+  const cor = !conhecida ? '#6b7280'
+            : livres === 0 ? '#ef4444'
+            : livres <= 2  ? '#f59e0b'
+            : '#22c55e'
+  return { usadas, livres, conhecida, cor }
+}
+
+function portasBadgeHTML(row) {
+  if (!row) return ''
+  const p = infoPortas(row)
+  if (!p.conhecida) return ''
+  return `<div style="position:absolute;top:2px;left:-24px;background:#060f07;border:1.5px solid ${p.cor};color:${p.cor};font-size:9px;font-weight:800;font-family:'Courier New',monospace;border-radius:8px;padding:1px 4px;line-height:1.2;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,0.7)">${p.usadas}/${TOTAL_PORTAS}</div>`
+}
+
+function portasTextoCurto(row) {
+  const p = infoPortas(row)
+  if (!p.conhecida) return ''
+  const txt = p.livres === 0 ? 'cheia' : `${p.livres} livre${p.livres !== 1 ? 's' : ''}`
+  return ` · <span style="color:${p.cor};font-weight:700">${txt}</span>`
+}
+
+function fmtDist(m) {
+  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1).replace('.', ',')} km`
+}
+
+let livresModo = 'eu'        // 'eu' | 'centro'
+let livresFtta = false
+let livresOrigem = null
+
+function ensurePainelLivres() {
+  let el = document.getElementById('painel-livres')
+  if (el) return el
+  el = document.createElement('div')
+  el.id = 'painel-livres'
+  el.innerHTML = `
+    <div class="pl-handle"></div>
+    <div class="pl-head">
+      <div>
+        <div class="pl-title"><i class="ph ph-plugs"></i> Portas livres perto</div>
+        <div class="pl-sub" id="pl-sub">—</div>
+      </div>
+      <button class="pl-close" onclick="fecharPortasLivres()">✕</button>
+    </div>
+    <div class="pl-controls">
+      <div class="pl-seg">
+        <button data-modo="eu"     onclick="setLivresModo('eu')"><i class="ph ph-navigation-arrow"></i> Minha localização</button>
+        <button data-modo="centro" onclick="setLivresModo('centro')"><i class="ph ph-crosshair"></i> Centro do mapa</button>
+      </div>
+      <button class="pl-chip" id="pl-ftta" onclick="toggleLivresFtta()"><i class="ph ph-building"></i> FTTA</button>
+    </div>
+    <div class="pl-legend">
+      <span><i style="background:#22c55e"></i>3+ livres</span>
+      <span><i style="background:#f59e0b"></i>1–2 livres</span>
+      <span><i style="background:#ef4444"></i>cheia</span>
+      <span><i style="background:#6b7280"></i>sem binagem</span>
+    </div>
+    <div class="pl-list" id="pl-list"></div>`
+  document.body.appendChild(el)
+  return el
+}
+
+function renderPortasLivres() {
+  const list = document.getElementById('pl-list')
+  const sub  = document.getElementById('pl-sub')
+  if (!list) return
+  document.querySelectorAll('#painel-livres .pl-seg button').forEach(b =>
+    b.classList.toggle('on', b.dataset.modo === livresModo))
+  document.getElementById('pl-ftta')?.classList.toggle('on', livresFtta)
+
+  if (!livresOrigem) {
+    sub.textContent = 'Obtendo sua localização…'
+    list.innerHTML = ''
+    return
+  }
+  sub.textContent = livresModo === 'eu' ? 'A partir da sua localização' : 'A partir do centro do mapa (busque o endereço do cliente)'
+
+  const rows = Object.values(ctoData).filter(r =>
+    r && r.status_aprovacao === 'aprovado' &&
+    r.status !== 'Danificada' &&
+    r.lat != null && r.lng != null &&
+    (livresFtta || !r.ftta))
+    .map(r => ({ r, d: livresOrigem.distanceTo(L.latLng(r.lat, r.lng)), p: infoPortas(r) }))
+    .sort((a, b) => a.d - b.d)
+
+  const comLivre = rows.filter(x => x.p.conhecida && x.p.livres > 0).slice(0, 10)
+  const semInfo  = rows.filter(x => !x.p.conhecida && x.d <= 1000).slice(0, 5)
+
+  const item = ({ r, d, p }) => {
+    const sc    = STATUS_COLORS[r.status] || '#6b7280'
+    const nome  = [r.area_cabo || 'CTO', r.sp ? 'SP ' + r.sp : ''].filter(Boolean).join(' · ')
+    const andar = r.ftta ? `Prédio${r.andar ? ' · ' + r.andar + 'º andar' : ''} — ` : ''
+    const end   = [r.endereco, r.numero].filter(Boolean).join(', ') || r.bairro || ''
+    const portas = p.conhecida
+      ? `<div class="pl-portas" style="color:${p.cor};border-color:${p.cor}"><b>${p.livres}</b><small>livre${p.livres !== 1 ? 's' : ''}</small></div>`
+      : `<div class="pl-portas" style="color:#6b7280;border-color:#334155"><b>?</b><small>sem bin.</small></div>`
+    return `
+      <div class="pl-item" onclick="irParaCtoLivre('${r.id}')">
+        ${portas}
+        <div class="pl-info">
+          <strong>${escHtml(nome)}</strong>
+          <small><span class="dot" style="background:${sc};display:inline-block;width:7px;height:7px;margin-right:4px"></span>${escHtml(andar + end)}</small>
+        </div>
+        <div class="pl-dist">${fmtDist(d)}</div>
+      </div>`
+  }
+
+  let html = ''
+  html += comLivre.length
+    ? comLivre.map(item).join('')
+    : `<div class="pl-empty">Nenhuma caixa com porta livre conhecida por perto.</div>`
+  if (semInfo.length) {
+    html += `<div class="pl-sep">Sem binagem registrada (até 1 km)</div>` + semInfo.map(item).join('')
+  }
+  list.innerHTML = html
+}
+
+function atualizarOrigemLivres() {
+  if (livresModo === 'centro') {
+    livresOrigem = map.getCenter()
+    renderPortasLivres()
+    return
+  }
+  if (meMarker) {
+    livresOrigem = meMarker.getLatLng()
+    renderPortasLivres()
+    return
+  }
+  livresOrigem = null
+  renderPortasLivres()
+  if (!navigator.geolocation) { setLivresModo('centro'); return }
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      if (livresModo !== 'eu') return
+      livresOrigem = L.latLng(pos.coords.latitude, pos.coords.longitude)
+      renderPortasLivres()
+    },
+    () => { if (livresModo === 'eu') setLivresModo('centro') },
+    { enableHighAccuracy: true, timeout: 10000 }
+  )
+}
+
+window.setLivresModo = (modo) => { livresModo = modo; atualizarOrigemLivres() }
+window.toggleLivresFtta = () => { livresFtta = !livresFtta; renderPortasLivres() }
+
+window.abrirPortasLivres = () => {
+  const el = ensurePainelLivres()
+  document.getElementById('painel')?.classList.remove('open')
+  document.getElementById('painel-admin')?.classList.remove('open')
+  map.closePopup()
+  el.classList.add('open')
+  atualizarOrigemLivres()
+}
+
+window.fecharPortasLivres = () => {
+  document.getElementById('painel-livres')?.classList.remove('open')
+}
+
+window.irParaCtoLivre = (id) => {
+  window.fecharPortasLivres()
+  window.focusMarker(id)
+}
+
+function initPortasLivres() {
+  const btn = document.getElementById('btn-livres')
+  if (btn) btn.onclick = () => {
+    const el = document.getElementById('painel-livres')
+    el?.classList.contains('open') ? window.fecharPortasLivres() : window.abrirPortasLivres()
+  }
+  // Atualiza a lista ao arrastar o mapa (modo centro) ou ao andar (modo eu)
+  map.on('moveend', () => {
+    if (!document.getElementById('painel-livres')?.classList.contains('open')) return
+    if (livresModo === 'centro') { livresOrigem = map.getCenter(); renderPortasLivres() }
+  })
+}
+
 // ── Binagem de portas ─────────────────────────────────────────
 let binagemCtoId = null
 let binagemSel   = new Set()
@@ -1597,7 +1802,9 @@ window.salvarBinagem = async () => {
     de:   antes.length  ? antes.join(', ')  : 'nenhuma',
     para: portas.length ? portas.join(', ') : 'nenhuma',
   })
+  binagemConhecida.add(String(id))
   if (updated) window._applyChange('UPDATE', updated)
+  else refreshMarkerIcon(id)
   window.fecharBinagem()
   // Reabre o card da caixa já com os slots atualizados
   setTimeout(() => window.focusMarker(id), 100)
