@@ -541,16 +541,10 @@ function initMap() {
 
   initFilters()
 
-  map.on('click', (e) => {
-    if (document.getElementById('modal').style.display === 'flex') return
-    // Se há popup aberto, apenas fecha — não abre modal de cadastro
-    if (map.hasLayer && document.querySelector('.leaflet-popup')) {
-      map.closePopup()
-      return
-    }
-    pendingLatLng = e.latlng
-    placeTempMarker(e.latlng)
-    openModal()
+  // Clique no mapa NÃO abre mais o cadastro — só navega/fecha popups.
+  // Cadastro de CTO: botão de pin (GPS) ou botão "+".
+  map.on('click', () => {
+    if (document.querySelector('.leaflet-popup')) map.closePopup()
   })
 
   loadCtos()
