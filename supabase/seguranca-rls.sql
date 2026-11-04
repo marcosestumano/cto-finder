@@ -103,10 +103,11 @@ create policy ctos_select on public.ctos for select to authenticated
 create policy ctos_insert on public.ctos for insert to authenticated
   with check (submetido_por = (auth.jwt() ->> 'email') or public.is_admin());
 
--- Editar, aprovar, mudar status, remover: só admin.
--- (A binagem continua funcionando: usa set_portas_binadas, que é SECURITY DEFINER.)
+-- Editar: qualquer técnico logado (caixas aprovadas ou as dele).
+-- Aprovação e autoria só admin muda (trigger em permissoes-tecnico.sql).
 create policy ctos_update on public.ctos for update to authenticated
-  using (public.is_admin()) with check (public.is_admin());
+  using (status_aprovacao = 'aprovado' or submetido_por = (auth.jwt() ->> 'email') or public.is_admin())
+  with check (status_aprovacao = 'aprovado' or submetido_por = (auth.jwt() ->> 'email') or public.is_admin());
 
 create policy ctos_delete on public.ctos for delete to authenticated
   using (public.is_admin());

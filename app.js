@@ -165,8 +165,8 @@ async function handleSession(session) {
     if (isAdmin) {
       document.getElementById('btn-pendentes').style.display = 'flex'
       document.getElementById('admin-badge-wrap').style.display = 'block'
-      initAdminPanel()
     }
+    initAdminPanel()   // liga o modal de edição (todos os técnicos podem editar)
     if (!mapInitialized) {
       initMap()
       initSearch()
@@ -979,7 +979,6 @@ function buildBuildingPopupHTML(key) {
   const addBtn = `
     <button class="bld-add-btn" onclick="addAndar('${key}')">
       <i class="ph ph-plus-circle"></i> Adicionar andar
-      ${hasApproved ? '' : '<span class="bld-add-pending-note">aguarda 1ª aprovação</span>'}
     </button>`
 
   return `
@@ -1057,13 +1056,6 @@ window.addAndar = (key) => {
   }
   document.getElementById('f-andar')?.focus()
 
-  // Mostra badge de auto-aprovação no modal se aplicável
-  const geocodeMsg = document.getElementById('geocode-msg') || document.querySelector('.geocode-msg')
-  if (hasApproved) {
-    setGeocodeMsg('Prédio já aprovado — novo andar será aprovado automaticamente', 'success')
-  } else {
-    setGeocodeMsg('Aguardando aprovação da primeira CTO deste prédio', '')
-  }
 }
 
 function upsertBuildingMarker(key) {
@@ -1936,11 +1928,12 @@ function buildPopupHTML(row) {
         <span class="popup-status-badge">${escHtml(row.status)}</span>
       </div>`
 
-  const adminBtns = isAdmin
+  // Editar: qualquer técnico logado. Alertar/Remover: só admin.
+  const adminBtns = currentUser
     ? `<div class="popup-admin-btns">
         <button class="popup-edit" onclick="editCto('${row.id}')">Editar</button>
-        <button class="popup-alertar" onclick="alertarCto('${row.id}')"><i class="ph ph-megaphone"></i> Alertar</button>
-        <button class="popup-del"  onclick="deleteCto('${row.id}')">Remover</button>
+        ${isAdmin ? `<button class="popup-alertar" onclick="alertarCto('${row.id}')"><i class="ph ph-megaphone"></i> Alertar</button>
+        <button class="popup-del"  onclick="deleteCto('${row.id}')">Remover</button>` : ''}
       </div>` : ''
 
   const binadas  = getPortasBinadas(row)
@@ -2400,6 +2393,8 @@ window.editCto = function (id) {
   document.getElementById('edit-sec').value                 = row.sec       || ''
   document.getElementById('edit-status').value              = row.status    || 'Ativa'
   document.getElementById('edit-status-aprovacao').value    = row.status_aprovacao || 'pendente'
+  const grpAprov = document.getElementById('edit-status-aprovacao').closest('.form-group')
+  if (grpAprov) grpAprov.style.display = isAdmin ? '' : 'none'
   document.getElementById('edit-msg').textContent           = ''
   document.getElementById('edit-msg').className             = 'geocode-msg'
   // FTTA fields
@@ -2448,7 +2443,7 @@ function initAdminPanel() {
       }
     }
     btn.disabled = true; btn.textContent = 'Salvando…'
-    const { data: updated, error } = await sb.from(TABLE).update({
+    const dadosEdit = {
       endereco:         document.getElementById('edit-endereco').value.trim(),
       numero:           document.getElementById('edit-numero').value.trim(),
       bairro:           document.getElementById('edit-bairro').value.trim(),
@@ -2456,21 +2451,24 @@ function initAdminPanel() {
       sp:               document.getElementById('edit-sp').value.trim().toUpperCase(),
       sec:              document.getElementById('edit-sec').value.trim().toUpperCase(),
       status:           document.getElementById('edit-status').value,
-      status_aprovacao: document.getElementById('edit-status-aprovacao').value,
       ftta:             document.getElementById('edit-ftta')?.checked || false,
       andar:            document.getElementById('edit-ftta')?.checked ? (document.getElementById('edit-andar')?.value.trim() || null) : null,
       complemento:      document.getElementById('edit-ftta')?.checked ? (document.getElementById('edit-complemento')?.value.trim() || null) : null,
-    }).eq('id', id).select().single()
+    }
+    if (isAdmin) dadosEdit.status_aprovacao = document.getElementById('edit-status-aprovacao').value
+    const { data: updated, error } = await sb.from(TABLE).update(dadosEdit).eq('id', id).select().single()
     btn.disabled = false; btn.textContent = 'Salvar'
     if (error) {
       const msg = document.getElementById('edit-msg')
-      msg.textContent = 'Erro: ' + error.message
+      msg.textContent = /permission|policy|row-level|0 rows|JSON object/i.test(error.message)
+        ? 'Sem permissão para editar (rode supabase/permissoes-tecnico.sql no Supabase).'
+        : 'Erro: ' + error.message
       msg.className   = 'geocode-msg error'
     } else {
       logHistorico(id, 'editou', {
         endereco: document.getElementById('edit-endereco').value.trim(),
         status:   document.getElementById('edit-status').value,
-        aprovacao: document.getElementById('edit-status-aprovacao').value,
+        ...(isAdmin ? { aprovacao: document.getElementById('edit-status-aprovacao').value } : {}),
       })
       if (updated) window._applyChange('UPDATE', updated)
       document.getElementById('modal-edit').style.display = 'none'
