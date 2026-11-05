@@ -528,7 +528,7 @@ async function syncOfflineQueue() {
 }
 
 function initMap() {
-  map = L.map('map', { zoomControl: false, attributionControl: false }).setView([-23.5886, -46.6097], 15)
+  map = L.map('map', { zoomControl: false, attributionControl: false, closePopupOnClick: false }).setView([-23.5886, -46.6097], 15)
   const tileUrl = MAPBOX_TOKEN
     ? `https://api.mapbox.com/styles/v1/mapbox/dark-v11/tiles/{z}/{x}/{y}@2x?access_token=${MAPBOX_TOKEN}`
     : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
@@ -568,8 +568,45 @@ function initMap() {
 
   // Clique no mapa NÃO abre mais o cadastro — só navega/fecha popups.
   // Cadastro de CTO: botão de pin (GPS) ou botão "+".
+  // Popup só fecha com CLIQUE de verdade fora dele. Arrastar o mapa mantém aberto.
+  const mapEl = map.getContainer()
+  let downX = 0, downY = 0, moved = false, lastDragEnd = 0
+  mapEl.addEventListener('pointerdown', (e) => { downX = e.clientX; downY = e.clientY; moved = false }, true)
+  mapEl.addEventListener('pointermove', (e) => {
+    if (Math.abs(e.clientX - downX) > 8 || Math.abs(e.clientY - downY) > 8) moved = true
+  }, true)
+  map.on('dragstart zoomstart', () => { moved = true })
+  map.on('dragend zoomend', () => { lastDragEnd = Date.now() })
   map.on('click', () => {
+    if (moved || Date.now() - lastDragEnd < 250) return
     if (document.querySelector('.leaflet-popup')) map.closePopup()
+  })
+
+  // O cluster remove da tela os marcadores fora da área visível, e o Leaflet
+  // fecha o popup quando o marcador sai. Enquanto o popup está aberto,
+  // desligamos esse fechamento automático para poder arrastar à vontade.
+  map.on('popupopen', (e) => {
+    const src = e.popup._source
+    if (src && !src._keepPopupPatched) {
+      src.off('remove', src.closePopup, src)
+      src._keepPopupPatched = true
+    }
+  })
+  map.on('popupclose', (e) => {
+    const src = e.popup._source
+    if (src && src._keepPopupPatched) {
+      src.on('remove', src.closePopup, src)
+      src._keepPopupPatched = false
+    }
+  })
+  // Se der zoom-out e a caixa virar parte de um cluster, aí sim fecha.
+  map.on('zoomend', () => {
+    setTimeout(() => {
+      const src = map._popup && map._popup._source
+      if (!src || !map._popup.isOpen?.()) return
+      const vp = clusterGroup.getVisibleParent?.(src)
+      if (vp && vp !== src) map.closePopup()
+    }, 0)
   })
 
   loadCtos()
