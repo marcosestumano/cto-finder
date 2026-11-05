@@ -2604,3 +2604,32 @@ body:not(.is-admin) #painel-admin { display: none !important; }
 .dup-item small { display: block; color: #94a3b8; font-size: 11px; }
 .dup-ver { flex-shrink: 0; background: #f59e0b; color: #1c1008; border: none; border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
 .dup-hint { color: #fcd34d; font-size: 11px; margin-top: 6px; opacity: 0.85; }
+
+
+/* ── FTTA: Bloco / Torre ───────────────────────────────────── */
+.opt-hint { color: #64748b; font-weight: 400; font-size: 11px; text-transform: none; }
+.bloco-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.bloco-chips:empty { display: none; }
+.bloco-chip {
+  padding: 5px 10px; border-radius: 999px; font-size: 12px; font-weight: 700;
+  background: rgba(57,255,20,0.06); border: 1px solid #1f3d24; color: #cbd5e1; cursor: pointer;
+}
+.bloco-chip.on, .bloco-chip:hover { border-color: #39ff14; color: #39ff14; background: rgba(57,255,20,0.12); }
+.bld-bloco { margin-bottom: 8px; }
+.bld-bloco:last-child { margin-bottom: 0; }
+.bld-bloco-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 4px 2px; margin-bottom: 2px; border-bottom: 1px solid #1f3d24;
+  font-size: 12px; font-weight: 800; color: #e2e8f0;
+}
+.bld-bloco-head i { color: #39ff14; vertical-align: -2px; }
+.bld-bloco-add {
+  display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px;
+  border: 1px dashed #39ff14; border-radius: 6px; background: transparent;
+  color: #39ff14; font-size: 11px; font-weight: 700; cursor: pointer;
+}
+.bld-bloco-add:hover { background: rgba(57,255,20,0.12); }
+.bld-ctx {
+  font-size: 12px; font-weight: 700; color: #39ff14;
+  padding: 0 0 6px; margin-bottom: 6px; border-bottom: 1px solid #1f3d24;
+}

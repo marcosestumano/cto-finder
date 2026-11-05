@@ -188,6 +188,11 @@
           <span class="ftta-toggle-label"><i class="ph ph-building"></i> FTTA — Fibra até o Apartamento</span>
         </label>
         <div id="ftta-fields" style="display:none">
+          <div class="form-group">
+            <label>Bloco / Torre <small class="opt-hint">(opcional — só condomínio com mais de 1 bloco)</small></label>
+            <input id="f-bloco" type="text" placeholder="Ex: A, B, 01, 02" maxlength="15" autocapitalize="characters" autocomplete="off" />
+            <div id="f-bloco-chips" class="bloco-chips"></div>
+          </div>
           <div class="form-row">
             <div class="form-group">
               <label>Andar</label>
@@ -424,6 +429,10 @@
         <span class="ftta-toggle-label"><i class="ph ph-building"></i> FTTA</span>
       </label>
       <div id="edit-ftta-fields" style="display:none">
+        <div class="form-group">
+          <label>Bloco / Torre <small class="opt-hint">(opcional)</small></label>
+          <input id="edit-bloco" type="text" placeholder="Ex: A, B, 01, 02" maxlength="15" autocapitalize="characters" autocomplete="off" />
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label>Andar</label>
