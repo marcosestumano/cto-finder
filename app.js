@@ -482,6 +482,83 @@ function compararBloco(a, b) {
 function blocosDoPredio(ctosArr) {
   return [...new Set(ctosArr.map(c => c.bloco).filter(Boolean))].sort(compararBloco)
 }
+// Andar: chave de linha ("03" = "3") e ordem na fachada (topo primeiro)
+function andarChave(a) {
+  const s = String(a ?? '').trim().toUpperCase()
+  return /^\d+$/.test(s) ? String(parseInt(s, 10)) : s
+}
+function andarOrdem(a) {
+  const s = andarChave(a)
+  if (!s) return -1000                                   // sem andar → última linha
+  if (/^-?\d+$/.test(s)) return parseInt(s, 10)
+  if (/^(T|TERREO|TÉRREO)\b/.test(s)) return 0
+  if (/^(SS|SUBSOLO|G|GARAGEM)/.test(s)) return -1
+  return -500                                            // texto livre (ex: "COB")
+}
+function andarRotulo(a) {
+  const s = andarChave(a)
+  return !s ? '—' : /^\d+$/.test(s) ? s + 'º' : s
+}
+
+// Grade andar × bloco (fachada do condomínio)
+function buildBlocoGridHTML(key, ctosArr, colors) {
+  const blocos = blocosDoPredio(ctosArr)
+  const cols   = ctosArr.some(c => !c.bloco) ? [...blocos, ''] : blocos
+
+  const linhas = new Map()                               // andarChave → { rotulo, ordem, cel: Map(bloco → [cto]) }
+  for (const c of ctosArr) {
+    const k = andarChave(c.andar)
+    if (!linhas.has(k)) linhas.set(k, { rotulo: andarRotulo(c.andar), ordem: andarOrdem(c.andar), andar: k, cel: new Map() })
+    const cel = linhas.get(k).cel
+    const b = c.bloco || ''
+    if (!cel.has(b)) cel.set(b, [])
+    cel.get(b).push(c)
+  }
+  const rows = [...linhas.values()].sort((a, b) => b.ordem - a.ordem || a.andar.localeCompare(b.andar, 'pt-BR', { numeric: true }))
+
+  const head = cols.map(b => `
+    <th><button class="bg-col" data-bloco="${escHtml(b)}" title="Adicionar andar no ${b ? escHtml(blocoLabel(b)) : 'prédio'}"
+        onclick="event.stopPropagation();addAndar('${key}', this.dataset.bloco)">
+      <small>${b ? 'Bloco' : 'Sem'}</small><b>${b ? escHtml(b) : 'bloco'}</b>
+    </button></th>`).join('')
+
+  const body = rows.map(r => `
+    <tr>
+      <th class="bg-andar">${escHtml(r.rotulo)}</th>
+      ${cols.map(b => {
+        const lista = r.cel.get(b) || []
+        if (!lista.length) return `
+          <td><button class="bg-vazio" data-bloco="${escHtml(b)}" data-andar="${escHtml(r.andar)}" title="Cadastrar CTO aqui"
+              onclick="event.stopPropagation();addAndar('${key}', this.dataset.bloco, this.dataset.andar)">+</button></td>`
+        return `<td>${lista.map(c => {
+          const sc = colors[c.status] || '#6b7280'
+          const p  = infoPortas(c)
+          const txt = p.conhecida ? String(p.livres) : '?'
+          const tip = [c.area_cabo, c.sp ? 'SP ' + c.sp : '', c.sec ? 'SEC ' + c.sec : '', c.status,
+                       p.conhecida ? `${p.livres} livre${p.livres !== 1 ? 's' : ''}` : 'sem binagem'].filter(Boolean).join(' · ')
+          return `<button class="bg-cto" style="border-color:${sc}" title="${escHtml(tip)}"
+              onclick="event.stopPropagation();showCtoDetails('${key}','${c.id}')">
+            <span class="bg-dot" style="background:${sc}"></span><b style="color:${p.cor}">${txt}</b>
+          </button>`
+        }).join('')}</td>`
+      }).join('')}
+    </tr>`).join('')
+
+  return `
+    <div class="bg-wrap">
+      <table class="bld-grid">
+        <thead><tr><th class="bg-andar bg-corner">Andar</th>${head}</tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    </div>
+    <div class="bg-legenda">
+      <span><span class="bg-dot" style="background:#22c55e"></span>status</span>
+      <span><b>nº</b> portas livres</span>
+      <span><b>?</b> sem binagem</span>
+      <span><b>+</b> cadastrar</span>
+    </div>`
+}
+
 function localFtta(row) {
   return [row.bloco ? blocoLabel(row.bloco) : '', row.andar ? row.andar + 'º andar' : '', row.complemento || '']
     .filter(Boolean).join(' · ')
@@ -1011,29 +1088,14 @@ function buildBuildingPopupHTML(key) {
   if (!temBloco) {
     floors = ctosArr.map(floorRow).join('')
   } else {
-    const grupos = new Map()
-    for (const c of ctosArr) {
-      const b = c.bloco || ''
-      if (!grupos.has(b)) grupos.set(b, [])
-      grupos.get(b).push(c)
-    }
-    floors = [...grupos.entries()].map(([b, lista]) => `
-      <div class="bld-bloco">
-        <div class="bld-bloco-head">
-          <span><i class="ph ph-buildings"></i> ${b ? escHtml(blocoLabel(b)) : 'Sem bloco'}</span>
-          <button class="bld-bloco-add" data-bloco="${escHtml(b)}" onclick="event.stopPropagation();addAndar('${key}', this.dataset.bloco)">
-            <i class="ph ph-plus"></i> andar
-          </button>
-        </div>
-        ${lista.map(floorRow).join('')}
-      </div>`).join('')
+    floors = buildBlocoGridHTML(key, ctosArr, colors)
   }
   const nBlocos = blocosDoPredio(ctosArr).length
 
   const hasApproved = ctosArr.some(c => c.status_aprovacao === 'aprovado')
   const addBtn = `
     <button class="bld-add-btn" onclick="addAndar('${key}')">
-      <i class="ph ph-plus-circle"></i> ${temBloco ? 'Adicionar andar / bloco' : 'Adicionar andar'}
+      <i class="ph ph-plus-circle"></i> ${temBloco ? 'Novo bloco / andar' : 'Adicionar andar'}
     </button>`
 
   return `
@@ -1078,7 +1140,7 @@ window.showBuildingPopup = (key) => {
   setPopupNoFlicker(bm, buildBuildingPopupHTML(key))
 }
 
-window.addAndar = (key, bloco = null) => {
+window.addAndar = (key, bloco = null, andar = null) => {
   const group = buildingGroups[key]
   if (!group) return
   const ctosArr   = group.ctos.map(id => ctoData[id]).filter(Boolean)
@@ -1117,8 +1179,11 @@ window.addAndar = (key, bloco = null) => {
   const blocoIn = document.getElementById('f-bloco')
   if (blocoIn) blocoIn.value = bloco || ''
   renderBlocoChips(blocos)
-  if (blocos.length && !bloco) blocoIn?.focus()
-  else document.getElementById('f-andar')?.focus()
+  const andarIn = document.getElementById('f-andar')
+  if (andarIn && andar) andarIn.value = andar
+  if (andar) document.getElementById('f-complemento')?.focus()
+  else if (blocos.length && !bloco) blocoIn?.focus()
+  else andarIn?.focus()
 
 }
 
@@ -1130,7 +1195,7 @@ function upsertBuildingMarker(key) {
   if (buildingMarkers[key]) clusterGroup.removeLayer(buildingMarkers[key])
 
   const m = L.marker([group.lat, group.lng], { icon: makeBuildingIcon(ctosArr) })
-    .bindPopup(buildBuildingPopupHTML(key))
+    .bindPopup(buildBuildingPopupHTML(key), { maxWidth: Math.min(380, window.innerWidth - 32), minWidth: 240 })
   m._buildingKey = key
   // Ao fechar, volta para a lista de andares — próxima abertura começa pelo prédio
   m.on('popupclose', () => {
