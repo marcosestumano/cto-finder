@@ -5,52 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Política de Privacidade — CTO Finder</title>
   <link rel="icon" href="/favicon.ico" />
-  <meta name="theme-color" content="#060f07" />
+  <meta name="theme-color" content="#ffffff" />
   <style>
-    :root { color-scheme: dark; }
+    :root { color-scheme: light; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #060f07;
-      color: #cbd5e1;
-      line-height: 1.65;
-      font-size: 15px;
-      padding: 0 16px 48px;
+      background: #ffffff;
+      color: #222;
+      line-height: 1.7;
+      font-size: 16px;
+      padding: 0 16px 56px;
     }
-    .wrap { max-width: 720px; margin: 0 auto; }
-    header {
-      position: sticky; top: 0; z-index: 2;
-      background: rgba(6, 15, 7, 0.94);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid rgba(57, 255, 20, 0.15);
-      margin: 0 -16px; padding: 14px 16px;
+    .wrap { max-width: 680px; margin: 0 auto; }
+    header { padding: 20px 0; }
+    header .wrap { display: flex; align-items: center; justify-content: space-between; }
+    .logo { font-weight: 700; letter-spacing: 1px; font-size: 14px; color: #222; }
+    .logo span { color: #16a34a; }
+    .back { color: #16a34a; text-decoration: none; font-size: 14px; }
+    .back:hover { text-decoration: underline; }
+    h1 {
+      font-size: 26px; line-height: 1.3; font-weight: 700; color: #111;
+      margin: 24px 0 24px; padding-bottom: 12px;
+      border-bottom: 2px solid #16a34a; display: inline-block;
     }
-    header .wrap { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-    .logo { font-weight: 800; letter-spacing: 1px; color: #f1f5f9; font-size: 15px; }
-    .logo span { color: #39ff14; }
-    .back {
-      color: #39ff14; text-decoration: none; font-size: 14px; font-weight: 600;
-      border: 1px solid rgba(57, 255, 20, 0.35); border-radius: 8px; padding: 6px 12px;
-      white-space: nowrap;
-    }
-    h1 { color: #f1f5f9; font-size: 26px; line-height: 1.25; margin: 32px 0 6px; }
-    .updated { color: #64748b; font-size: 13px; margin-bottom: 24px; }
-    h2 { color: #86efac; font-size: 17px; margin: 30px 0 10px; }
-    p { margin-bottom: 12px; }
-    ul { margin: 0 0 12px 20px; }
-    li { margin-bottom: 6px; }
-    strong { color: #f1f5f9; }
-    .destaque {
-      background: rgba(57, 255, 20, 0.06);
-      border: 1px solid rgba(57, 255, 20, 0.3);
-      border-left: 4px solid #39ff14;
-      border-radius: 10px;
-      padding: 16px 18px;
-      margin: 8px 0 12px;
-    }
-    .destaque h2 { margin-top: 0; color: #39ff14; }
-    .destaque p:last-child, .destaque ul:last-child { margin-bottom: 0; }
-    footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #0d2a12; color: #475569; font-size: 12px; text-align: center; }
+    h2 { font-size: 18px; font-weight: 700; color: #111; margin: 32px 0 10px; }
+    p { margin-bottom: 14px; }
+    ul { margin: 0 0 14px; list-style: none; }
+    li { position: relative; padding-left: 18px; margin-bottom: 8px; }
+    li::before { content: ""; position: absolute; left: 2px; top: 0.7em; width: 6px; height: 6px; background: #16a34a; border-radius: 50%; }
+    strong { color: #111; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -63,7 +47,6 @@
 
   <main class="wrap">
     <h1>Política de Privacidade</h1>
-    <div class="updated">Última atualização: 3 de novembro de 2026</div>
 
     <p>
       O <strong>CTO Finder</strong> é uma ferramenta colaborativa para técnicos de campo localizarem e
@@ -72,60 +55,22 @@
       Proteção de Dados (LGPD — Lei nº 13.709/2018).
     </p>
 
-    <section class="destaque">
-      <h2>As informações das caixas são públicas</h2>
-      <p>
-        Tudo o que é registrado sobre as caixas pode ser observado por qualquer pessoa na rua. As CTOs ficam
-        instaladas em postes e fachadas, à vista, e trazem a identificação impressa na própria caixa. Basta
-        olhar para cima para ver:
-      </p>
-      <ul>
-        <li><strong>Identificação da caixa</strong> — área, SP e SEC, impressas na etiqueta;</li>
-        <li><strong>Localização</strong> — o endereço e a posição no mapa correspondem a vias públicas;</li>
-        <li><strong>Condição e ocupação</strong> — estado da caixa e portas em uso, verificáveis visualmente pelos cabos conectados.</li>
-      </ul>
-      <p>
-        <strong>Nenhuma informação sigilosa é tratada na plataforma.</strong> O CTO Finder não armazena dados de
-        clientes ou assinantes, contratos, senhas, configurações de equipamentos, projetos de rede ou documentos
-        internos de qualquer empresa.
-      </p>
-    </section>
-
-    <h2>1. Dados que coletamos sobre você</h2>
-    <ul>
-      <li><strong>Conta:</strong> nome, e-mail e foto de perfil (quando o login é feito com Google), usados para identificar quem acessa a plataforma.</li>
-      <li><strong>Contribuições:</strong> caixas cadastradas ou editadas, mudanças de status, binagens, comentários e alertas. Essas ações ficam registradas com o seu nome para manter o histórico de quem fez cada alteração.</li>
-      <li><strong>Localização:</strong> o GPS é usado no seu aparelho para mostrar sua posição no mapa, sugerir o endereço de uma nova caixa e listar caixas próximas. Gravamos apenas a posição da <em>caixa</em> que você cadastra — não guardamos o seu trajeto nem um histórico da sua localização.</li>
-      <li><strong>Notificações:</strong> se você ativar os alertas, o navegador gera um endereço de inscrição que guardamos apenas para enviar essas notificações.</li>
-      <li><strong>Dados no aparelho:</strong> cadastros feitos sem internet e alertas já lidos ficam salvos no próprio navegador até serem sincronizados ou descartados.</li>
-    </ul>
-
-    <h2>2. Como usamos esses dados</h2>
-    <ul>
-      <li>Permitir o login e o funcionamento do mapa colaborativo;</li>
-      <li>Manter o histórico de alterações e a qualidade das informações;</li>
-      <li>Enviar alertas e avisos que você optou por receber.</li>
-    </ul>
-
-    <h2>3. Quem pode ver o quê</h2>
-    <ul>
-      <li>Caixas, status, binagens e comentários ficam visíveis para usuários logados;</li>
-      <li>O histórico completo de alterações e os e-mails de quem cadastrou cada caixa ficam visíveis apenas para administradores.</li>
-    </ul>
-
-    <h2>4. Boas práticas de uso</h2>
+    <h2>As informações das caixas são públicas</h2>
     <p>
-      Para manter a plataforma livre de informações sensíveis, não registre nos comentários ou em qualquer
-      campo dados de clientes, endereços de assinantes, senhas ou informações internas de empresas.
+      Tudo o que é registrado sobre as caixas pode ser observado por qualquer pessoa na rua. As CTOs ficam
+      instaladas em postes e fachadas, à vista, e trazem a identificação impressa na própria caixa. Basta
+      olhar para cima para ver:
     </p>
-
-    <h2>5. Alterações nesta política</h2>
+    <ul>
+      <li><strong>Identificação da caixa</strong> — área, SP e SEC, impressas na etiqueta;</li>
+      <li><strong>Localização</strong> — o endereço e a posição no mapa correspondem a vias públicas;</li>
+      <li><strong>Condição e ocupação</strong> — estado da caixa e portas em uso, verificáveis visualmente pelos cabos conectados.</li>
+    </ul>
     <p>
-      Esta política pode ser atualizada conforme a plataforma evolui. A data da última atualização fica sempre
-      no topo desta página.
+      Nenhuma informação sigilosa é tratada na plataforma. O CTO Finder não armazena dados de clientes ou
+      assinantes, contratos, senhas, configurações de equipamentos, projetos de rede ou documentos internos
+      de qualquer empresa.
     </p>
-
-    <footer>CTO Finder · Desenvolvido por Marcos Vinicius</footer>
   </main>
 </body>
 </html>
