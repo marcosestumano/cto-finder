@@ -1568,13 +1568,27 @@ window.deleteCto = async (id) => {
   map.closePopup()
 }
 
+// Abre/fecha o seletor de status do popup
+window.toggleStatusMenu = (btn) => {
+  const sel = btn.closest('.status-select')
+  const abrir = !sel.classList.contains('open')
+  document.querySelectorAll('.status-select.open').forEach(el => el.classList.remove('open'))
+  if (abrir) sel.classList.add('open')
+}
+document.addEventListener('pointerdown', (e) => {
+  if (!e.target.closest('.status-select')) {
+    document.querySelectorAll('.status-select.open').forEach(el => el.classList.remove('open'))
+  }
+}, true)
+
 window.changeStatus = async (id, newStatus, btn) => {
+  btn?.closest('.status-select')?.classList.remove('open')
   const oldStatus = ctoData[id]?.status
   if (!newStatus || newStatus === oldStatus) return
   if (!confirm(`Mudar status para "${newStatus}"?`)) return
 
-  // Feedback imediato nos botões do popup
-  const wrap = btn?.closest('.status-chips')
+  // Feedback imediato no seletor do popup
+  const wrap = btn?.closest('.status-select, .status-chips')
   wrap?.classList.add('saving')
 
   const { data: updated, error } = await sb.rpc('set_cto_status', { p_cto_id: String(id), p_status: newStatus })
@@ -2037,11 +2051,20 @@ function buildPopupHTML(row) {
   const statusRow = podeMudarStatus
     ? `<div class="popup-row popup-row-status">
         <label>Status:</label>
-        <div class="status-chips">
-          ${STATUS_OPCOES.map(([v, cls, lbl]) =>
-            `<button type="button" class="status-chip st-${cls} ${v === row.status ? 'active' : ''}"
-               onclick="changeStatus('${row.id}', '${v}', this)">${lbl}</button>`).join('')}
-        </div>
+        ${(() => {
+          const atual = STATUS_OPCOES.find(([v]) => v === row.status) || [row.status || '', 'desc', row.status || 'Selecionar']
+          return `<div class="status-select">
+            <button type="button" class="status-select-btn st-${atual[1]}" onclick="toggleStatusMenu(this)">
+              <span class="status-select-lbl">${escHtml(atual[2])}</span>
+              <i class="ph ph-caret-down status-select-caret"></i>
+            </button>
+            <div class="status-select-menu">
+              ${STATUS_OPCOES.map(([v, cls, lbl]) =>
+                `<button type="button" class="status-select-opt st-${cls} ${v === row.status ? 'active' : ''}"
+                   onclick="changeStatus('${row.id}', '${v}', this)">${lbl}${v === row.status ? '<i class="ph ph-check"></i>' : ''}</button>`).join('')}
+            </div>
+          </div>`
+        })()}
         ${statusInfo}
       </div>`
     : `<div class="popup-row">

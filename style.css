@@ -2539,6 +2539,58 @@ body:not(.is-admin) #painel-admin { display: none !important; }
 .status-chip.st-desc  { --c: #6b7280; }
 .status-info { font-size: 11px; color: #64748b; }
 
+/* Seletor compacto de status (dropdown) */
+.status-select { position: relative; transition: opacity 0.15s; }
+.status-select.saving { opacity: 0.5; pointer-events: none; }
+.status-select-btn, .status-select-opt { --c: #6b7280; }
+.status-select-btn {
+  width: 100%;
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--c);
+  background: color-mix(in srgb, var(--c) 18%, #060f07);
+  color: #fff;
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+}
+.status-select-btn::before,
+.status-select-opt::before {
+  content: ''; width: 8px; height: 8px; border-radius: 50%;
+  background: var(--c); flex-shrink: 0;
+}
+.status-select-lbl { flex: 1; text-align: left; }
+.status-select-caret { transition: transform 0.15s; color: #94a3b8; }
+.status-select.open .status-select-caret { transform: rotate(180deg); }
+.status-select-menu {
+  display: none;
+  position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+  z-index: 20;
+  background: #0d1a0e;
+  border: 1px solid #166534;
+  border-radius: 8px;
+  padding: 4px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.55);
+}
+.status-select.open .status-select-menu { display: block; }
+.status-select-opt {
+  width: 100%;
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 8px;
+  border: 0; border-radius: 6px;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 13px; font-weight: 600;
+  text-align: left; cursor: pointer;
+}
+.status-select-opt:active, .status-select-opt:hover { background: color-mix(in srgb, var(--c) 15%, transparent); }
+.status-select-opt.active { color: #fff; }
+.status-select-opt i { margin-left: auto; color: var(--c); }
+.status-select-btn.st-ativa, .status-select-opt.st-ativa { --c: #22c55e; }
+.status-select-btn.st-manut, .status-select-opt.st-manut { --c: #f59e0b; }
+.status-select-btn.st-danif, .status-select-opt.st-danif { --c: #ef4444; }
+.status-select-btn.st-desc,  .status-select-opt.st-desc  { --c: #6b7280; }
+
 
 /* ── Portas livres perto ── */
 #btn-livres { background: #060f07; color: #39ff14; border: 2px solid #166534; }
